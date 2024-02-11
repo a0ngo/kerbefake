@@ -1,6 +1,7 @@
 package kerbefake;
 
 import kerbefake.errors.InvalidClientDataException;
+import kerbefake.errors.InvalidMessageServerDataException;
 import kerbefake.models.auth_server.ClientEntry;
 import kerbefake.models.auth_server.MessageServerEntry;
 
@@ -87,7 +88,7 @@ public class AuthServer {
         BufferedReader clientReader;
         HashMap<String, ClientEntry> clients = new HashMap<>();
         try {
-            clientReader = new BufferedReader(new FileReader(new File("./clients")));
+            clientReader = new BufferedReader(new FileReader("./clients"));
         } catch (FileNotFoundException e) {
             info("No clients file found.");
             return clients;
@@ -145,7 +146,39 @@ public class AuthServer {
         return new ClientEntry(id, name, passHash, lastSeen);
     }
 
+    /**
+     * Reads the msg.info file and returns an arraylist with all the registered message servers.
+     *
+     * @return an ArrayList of all the message server entries.
+     */
     private ArrayList<MessageServerEntry> readMsgServerData() {
-        return null;
+        BufferedReader serverReader;
+        ArrayList<MessageServerEntry> servers = new ArrayList<>();
+        try {
+            serverReader = new BufferedReader(new FileReader("msg.info"));
+        } catch (FileNotFoundException e) {
+            error("Unable to find msg.info file, no messaging server provided.");
+            return servers;
+        }
+
+        String ipAddr, name, id, b64SymKey;
+        try {
+            ipAddr = serverReader.readLine();
+            name = serverReader.readLine();
+            id = serverReader.readLine();
+            b64SymKey = serverReader.readLine();
+        } catch (IOException e) {
+            error("Failed to read line from msg.info file, must have 4 lines in the following order:\nIP:port\nName\nId (hex)\nBase64 Symmetric key\nFailure happened due to: %s", e);
+            return servers;
+        }
+
+        try {
+            servers.add(MessageServerEntry.parseMessageEntryData(ipAddr, name, id, b64SymKey));
+        } catch (InvalidMessageServerDataException e) {
+            error("Failed to parse message server entry due to %e", e);
+            return servers;
+        }
+
+        return servers;
     }
 }
