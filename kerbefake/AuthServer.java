@@ -105,7 +105,7 @@ public class AuthServer {
             }
 
             try {
-                ClientEntry client = parseClient(clientLine);
+                ClientEntry client = ClientEntry.parseClient(clientLine);
                 clients.put(client.getId(), client);
             } catch (InvalidClientDataException e) {
                 error("Failed to parse client data, assuming corrupted file and returning no clients registered, due to: %s", e);
@@ -113,37 +113,6 @@ public class AuthServer {
                 return clients;
             }
         }
-    }
-
-    /**
-     * Parses a line from the clients file.
-     *
-     * @param clientData - The line from the client's file
-     * @return - A client entry parsed and validated from the file.
-     * @throws InvalidClientDataException - in case the entry string provided fails validation.
-     */
-    private ClientEntry parseClient(String clientData) throws InvalidClientDataException {
-        String[] clientLineParts = clientData.split(":");
-        if (clientLineParts.length != 4) {
-            error("Invalid data line, invalid number of colons, has %d expected 3, assuming corrupted file and returning empty values ", clientLineParts.length - 1);
-            throw new InvalidClientDataException("Entry");
-        }
-
-        String id = clientLineParts[0];
-        String name = clientLineParts[1];
-        String passHash = clientLineParts[2];
-        String lastSeen = clientLineParts[3];
-
-        if (id.length() != 16)
-            throw new InvalidClientDataException("Id");
-        if (name.length() > 255)
-            throw new InvalidClientDataException("Name");
-        if (passHash.length() != 32)
-            throw new InvalidClientDataException("Password Hash");
-        if (lastSeen.length() != 19)
-            throw new InvalidClientDataException("Last Seen");
-
-        return new ClientEntry(id, name, passHash, lastSeen);
     }
 
     /**
