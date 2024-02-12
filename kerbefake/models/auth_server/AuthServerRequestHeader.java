@@ -60,7 +60,7 @@ public class AuthServerRequestHeader {
      * @throws InvalidRequestException - In case the data provided is invalid.
      */
     public static AuthServerRequestHeader parseHeader(byte[] rawHeader) throws InvalidRequestException {
-        if (rawHeader.length != Constants.REQUEST_HEADER_SIZE) {
+        if (rawHeader == null || rawHeader.length != Constants.REQUEST_HEADER_SIZE) {
             throw new InvalidRequestException("header");
         }
 
@@ -69,6 +69,13 @@ public class AuthServerRequestHeader {
         byte[] reqCodeBytes = {rawHeader[17], rawHeader[18]};
         RequestCode reqCode = RequestCode.parse(reqCodeBytes);
         int payloadSize = byteArrayToLEByteBuffer(rawHeader, 19, 4).getInt();
+
+        if(payloadSize < 0){
+            throw new InvalidRequestException("Payload Size");
+        }
+        if(version < 0){
+            throw new InvalidRequestException("Version");
+        }
 
         AuthServerRequestHeader header = new AuthServerRequestHeader(clientId, version, reqCode, payloadSize);
         header.setRawHeader(rawHeader);
