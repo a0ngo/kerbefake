@@ -11,4 +11,18 @@ public final class Constants {
      * Default port for authentication server
      */
     public static final int DEFAULT_PORT_AUTH_SERVER = 1256;
+
+    /**
+     * The request header's size is constant, see {@link kerbefake.models.auth_server.AuthServerRequestHeader}
+     */
+    public static final int REQUEST_HEADER_SIZE = 23;
+
+    public static final class RequestCodes {
+        /**
+         * Request code for registering clients.
+         */
+        public static final short REGISTER_CLIENT_CODE = 1024;
+    }
+
+
 }
