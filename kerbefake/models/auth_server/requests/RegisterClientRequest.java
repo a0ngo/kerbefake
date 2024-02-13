@@ -11,8 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Random;
+import java.util.UUID;
 
 import static kerbefake.Logger.error;
+import static kerbefake.Utils.hexStrToStr;
 
 public class RegisterClientRequest extends AuthServerRequest<RegisterClientRequestBody, String> {
     public RegisterClientRequest(AuthServerRequestHeader header, RegisterClientRequestBody body) {
@@ -30,7 +32,8 @@ public class RegisterClientRequest extends AuthServerRequest<RegisterClientReque
             throw new RequestExecutionException(this.getClass().getName(), "Failed to generate message digest for sha-256");
         }
         byte[] passwordHash = digest.digest(this.body.getPassword().getBytes());
-        String id = generateRandomID();
+        String hexUUID = UUID.randomUUID().toString().replace("-","");
+        String id = hexStrToStr(hexUUID);
         boolean addedClient = false;
         try {
             addedClient = clients.tryAddClientEntry(new ClientEntry(
@@ -52,14 +55,5 @@ public class RegisterClientRequest extends AuthServerRequest<RegisterClientReque
         return id;
     }
 
-    private String generateRandomID() {
-        String idChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_1234567890";
-        StringBuilder idBuilder = new StringBuilder();
-        Random rand = new Random();
-        while (idBuilder.length() < 16) {
-            int index = (int) (rand.nextFloat() * idChars.length());
-            idBuilder.append(idChars.charAt(index));
-        }
-        return idBuilder.toString();
-    }
+
 }
