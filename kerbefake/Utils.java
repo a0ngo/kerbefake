@@ -2,6 +2,8 @@ package kerbefake;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * A bunch of useful utility functions
@@ -55,5 +57,14 @@ public final class Utils {
             return null;
         }
         return strBuilder.toString();
+    }
+
+    /**
+     * Formats a given date into the server's format.
+     * @param date - the date to format
+     * @return a string representing the date
+     */
+    public static String getFormattedDate(Date date) {
+        return new SimpleDateFormat(Constants.DATE_FORMAT).format(date);
     }
 }

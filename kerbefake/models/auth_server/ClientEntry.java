@@ -19,7 +19,14 @@ public class ClientEntry {
     private String passwordHash;
     private Date lastSeen;
 
-    public ClientEntry(String id, String name, String passwordHash, Date lastSeen) {
+    public ClientEntry(String id, String name, String passwordHash, Date lastSeen) throws InvalidClientDataException {
+        if(id.length() != 16) {
+            throw new InvalidClientDataException("Id");
+        }
+        if(passwordHash.length() != 32){
+            throw new InvalidClientDataException("Password");
+        }
+
         this.id = id;
         this.name = name;
         this.passwordHash = passwordHash;

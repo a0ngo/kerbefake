@@ -19,6 +19,8 @@ public final class Constants {
 
     public static final String CLIENTS_FILE_NAME = "./clients";
 
+    public static final String DATE_FORMAT = "hh.mm.ss dd/MM/yyyy";
+
     public static final class RequestCodes {
         /**
          * Request code for registering clients.

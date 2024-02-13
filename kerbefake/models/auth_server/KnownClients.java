@@ -20,6 +20,7 @@ public final class KnownClients {
         clients = Collections.synchronizedMap(new HashMap<>());
         readAllClients();
         flushEntireFile();
+        instance = this;
     }
 
     /**
@@ -95,13 +96,21 @@ public final class KnownClients {
     }
 
     /**
-     * Adds a new client entry to the known clients map.
-     * The method is synchronized and since the class is a singletone it will synchronize on the object for all callers / users of the class
+     * Tries to add a new client entry to the known clients map.
+     * The method is synchronized and since the class is a singleton it will synchronize on the object for all callers / users of the class
      * The method will also persist the data
      * @param entry - the entry to add
+     * @return - false if failed, true if successful
+     * @throws RuntimeException - in case of a UUID collision
      */
-    public synchronized boolean addClient(ClientEntry entry) {
-        debug("Adding client entry: %s %s", entry.getId(), entry.getName());
+    public synchronized boolean tryAddClientEntry(ClientEntry entry) {
+        debug("Trying to adding client entry: %s %s", entry.getId(), entry.getName());
+
+        if(clients.values().stream().anyMatch(v -> v.getName().equals(entry.getName()))){
+            warn("Client with the same name already found.");
+            return false;
+        }
+
         BufferedWriter writer;
         try {
             writer = new BufferedWriter(new FileWriter(Constants.CLIENTS_FILE_NAME, true));
