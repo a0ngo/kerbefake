@@ -21,6 +21,10 @@ public final class Logger {
         log("[WARN ]", message, args);
     }
 
+    public static void debug(String message, Object... args) {
+        log("[DEBUG]", message, args);
+    }
+
     private static void log(String level, String message, Object... args) {
         System.out.printf("%7s %s%n", level, String.format(message, args));
     }
