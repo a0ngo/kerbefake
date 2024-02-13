@@ -3,6 +3,7 @@ package kerbefake;
 import kerbefake.errors.InvalidClientDataException;
 import kerbefake.errors.InvalidMessageServerDataException;
 import kerbefake.models.auth_server.ClientEntry;
+import kerbefake.models.auth_server.KnownClients;
 import kerbefake.models.auth_server.MessageServerEntry;
 
 import javax.net.ServerSocketFactory;
@@ -25,7 +26,8 @@ public class AuthServer {
      */
     public void start() {
         int port = loadPort();
-        HashMap<String, ClientEntry> knownClients = readClientData();
+        // Just to get it to load all the needed data before we start serving requests
+        KnownClients.getInstance();
         ArrayList<MessageServerEntry> knownMessageServers = readMsgServerData();
         ServerSocket socket;
         try {
@@ -68,51 +70,6 @@ public class AuthServer {
             error("Invalid port number in port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
         }
         return DEFAULT_PORT_AUTH_SERVER;
-    }
-
-    /**
-     * Obtains all client data from persistent storage.
-     * The data is stored in the local file clients with the following structure:
-     * ID:Name:PasswordHash:LastSeen
-     * <p>
-     * In order the size of the field is (bytes): 16,<=255,32,19
-     * <p>
-     * ID is 16 bytes.
-     * Name is less than equals to 255 bytes (255 characters)
-     * PasswordHash is 32 bytes
-     * LastSeen is 19 bytes, format is (hh.mm.ss DD/MM/YYYY).
-     *
-     * @return An HashMap of clients if such data exists in persistent storage, if not an empty HashMap.
-     */
-    private HashMap<String, ClientEntry> readClientData() {
-        BufferedReader clientReader;
-        HashMap<String, ClientEntry> clients = new HashMap<>();
-        try {
-            clientReader = new BufferedReader(new FileReader("./clients"));
-        } catch (FileNotFoundException e) {
-            info("No clients file found.");
-            return clients;
-        }
-        String clientLine = null;
-        while (true) {
-            try {
-                clientLine = clientReader.readLine();
-            } catch (IOException e) {
-                error("Failed to read line from file: %s", e);
-                // We assume that if there was a read issue we can assume the file is corrupted therefore we won't be using the data in the file.
-                clients.clear();
-                return clients;
-            }
-
-            try {
-                ClientEntry client = ClientEntry.parseClient(clientLine);
-                clients.put(client.getId(), client);
-            } catch (InvalidClientDataException e) {
-                error("Failed to parse client data, assuming corrupted file and returning no clients registered, due to: %s", e);
-                clients.clear();
-                return clients;
-            }
-        }
     }
 
     /**

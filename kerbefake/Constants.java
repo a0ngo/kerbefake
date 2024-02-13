@@ -17,6 +17,8 @@ public final class Constants {
      */
     public static final int REQUEST_HEADER_SIZE = 23;
 
+    public static final String CLIENTS_FILE_NAME = "./clients";
+
     public static final class RequestCodes {
         /**
          * Request code for registering clients.

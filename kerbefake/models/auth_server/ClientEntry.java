@@ -12,7 +12,7 @@ import static kerbefake.Logger.error;
 /**
  * Defines a
  */
-public class ClientEntry implements Serializable {
+public class ClientEntry {
 
     private String id;
     private String name;
@@ -80,5 +80,10 @@ public class ClientEntry implements Serializable {
 
 
         return new ClientEntry(id, name, passHash, lastSeenDate);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%s:%s:%s", id, name, passwordHash, new SimpleDateFormat("hh.mm.ss dd/MM/yyyy").format(lastSeen));
     }
 }
