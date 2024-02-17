@@ -5,6 +5,7 @@ import kerbefake.errors.InvalidClientDataException;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 import static kerbefake.Logger.error;
@@ -16,14 +17,14 @@ public class ClientEntry {
 
     private String id;
     private String name;
-    private String passwordHash;
+    private byte[] passwordHash;
     private Date lastSeen;
 
-    public ClientEntry(String id, String name, String passwordHash, Date lastSeen) throws InvalidClientDataException {
-        if(id.length() != 16) {
+    public ClientEntry(String id, String name, byte[] passwordHash, Date lastSeen) throws InvalidClientDataException {
+        if (id.length() != 16) {
             throw new InvalidClientDataException("Id");
         }
-        if(passwordHash.length() != 32){
+        if (passwordHash.length != 32) {
             throw new InvalidClientDataException("Password");
         }
 
@@ -41,7 +42,7 @@ public class ClientEntry {
         return name;
     }
 
-    public String getPasswordHash() {
+    public byte[] getPasswordHash() {
         return passwordHash;
     }
 
@@ -66,14 +67,14 @@ public class ClientEntry {
 
         String id = clientLineParts[0];
         String name = clientLineParts[1];
-        String passHash = clientLineParts[2];
+        byte[] passHash = Base64.getDecoder().decode(clientLineParts[2]);
         String lastSeen = clientLineParts[3];
 
         if (id.length() != 16)
             throw new InvalidClientDataException("Id");
         if (name.length() > 255)
             throw new InvalidClientDataException("Name");
-        if (passHash.length() != 32)
+        if (passHash.length != 32)
             throw new InvalidClientDataException("Password Hash");
 
         if (lastSeen.length() != 19)
@@ -91,6 +92,6 @@ public class ClientEntry {
 
     @Override
     public String toString() {
-        return String.format("%s:%s:%s:%s", id, name, passwordHash, new SimpleDateFormat("hh.mm.ss dd/MM/yyyy").format(lastSeen));
+        return String.format("%s:%s:%s:%s", id, name, new String(Base64.getEncoder().encode(passwordHash)), new SimpleDateFormat("hh.mm.ss dd/MM/yyyy").format(lastSeen));
     }
 }
