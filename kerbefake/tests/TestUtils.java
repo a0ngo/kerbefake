@@ -2,6 +2,8 @@ package kerbefake.tests;
 
 import kerbefake.AuthServer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Random;
 
 import static kerbefake.Logger.info;
@@ -16,7 +18,7 @@ public final class TestUtils {
         new Thread(server::start).start();
         try {
             info("Sleeping for 10 seconds to ensure server startup.");
-            Thread.sleep(10 * 1000);
+            Thread.sleep(3 * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
