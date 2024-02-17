@@ -2,7 +2,9 @@ package kerbefake;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -29,7 +31,13 @@ public final class Utils {
      * @return a {@link ByteBuffer} in Little Endian format.
      */
     public static ByteBuffer byteArrayToLEByteBuffer(byte[] bytes, int offset, int length) {
-        return ByteBuffer.wrap(bytes, offset, length).order(ByteOrder.LITTLE_ENDIAN);
+        byte[] bytesToCopy;
+        if (bytes.length != length) {
+            bytesToCopy = Arrays.copyOfRange(bytes, offset, offset + length);
+        } else {
+            bytesToCopy = bytes;
+        }
+        return ByteBuffer.wrap(bytesToCopy).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     public static String getNullTerminatedStringFromByteArray(byte[] bytes) {
@@ -83,5 +91,25 @@ public final class Utils {
             strBuilder.append((char) Integer.parseInt(hexStr.substring(i, i + 2), 16));
         }
         return strBuilder.toString();
+    }
+
+    /**
+     * Converts a string to a little endian byte array
+     *
+     * @param str - the string to convert
+     * @return - a byte array of length {@code str.length} of LE data for the provided str.
+     */
+    public static byte[] strToLEByteArray(String str) {
+        return ByteBuffer.allocate(str.length()).order(ByteOrder.LITTLE_ENDIAN).put(str.getBytes(StandardCharsets.US_ASCII)).array();
+    }
+
+    /**
+     * Converts an int to a little endian byte array.
+     *
+     * @param i - the integer to convert
+     * @return a byte array of length 4 of LE data for the provided int.
+     */
+    public static byte[] intToLEByteArray(int i) {
+        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(i).array();
     }
 }
