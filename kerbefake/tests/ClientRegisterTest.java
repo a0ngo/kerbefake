@@ -1,20 +1,24 @@
 package kerbefake.tests;
 
-import kerbefake.models.auth_server.AuthServerRequestHeader;
-import kerbefake.models.auth_server.RequestCode;
-import kerbefake.models.auth_server.requests.RegisterClientRequestBody;
+import kerbefake.errors.InvalidMessageException;
+import kerbefake.models.auth_server.AuthServerMessage;
+import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.auth_server.MessageCode;
+import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
+import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
+import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
+import static kerbefake.Logger.error;
 import static kerbefake.Logger.info;
-import static kerbefake.tests.TestUtils.generateRandomID;
-import static kerbefake.tests.TestUtils.startAuthServer;
+import static kerbefake.tests.TestUtils.*;
 
 /**
- * A test class for client registration request - {@link kerbefake.models.auth_server.requests.RegisterClientRequest}
+ * A test class for client registration request - {@link RegisterClientRequest}
  */
 public final class ClientRegisterTest {
 
@@ -23,40 +27,30 @@ public final class ClientRegisterTest {
         startAuthServer();
 
         info("Preparing data for request");
-//        AuthServerRequestHeader header = new AuthServerRequestHeader(generateRandomID(), (byte) 4, RequestCode.REGISTER_CLIENT, name.length() + password.length() + 2);
-        byte[] requestHeader = new byte[19];
         String randomId = generateRandomID();
-        String name = "Ron Person";
-        String password = "strongPassword123!";
+        String name = "Ron Person\0";
+        String password = "strongPassword123!\0";
+        int payloadSize = name.length() + password.length();
 
-        for(int i = 0; i < 16 ; i++){
-            requestHeader[i] = (byte)randomId.charAt(i);
-        }
-
-        requestHeader[16] = 4;
-
-        byte[] requestBytes = new byte[header.getRawHeader().length + name.length() + password.length() + 2];
-        int reqByteIdx = 0;
-        byte[] headerBytes = header.getRawHeader();
-        for (int i = 0; i < headerBytes.length; i++) {
-            requestBytes[reqByteIdx++] = headerBytes[i];
-        }
-        byte[] nameBytes = name.getBytes();
-        byte[] passBytes = password.getBytes();
-        for (int i = 0; i <= nameBytes.length; i++) {
-            requestBytes[reqByteIdx++] = i == nameBytes.length - 1 ? (byte) 0 : nameBytes[i];
-        }
-        for (int i = 0; i <= passBytes.length; i++) {
-            requestBytes[reqByteIdx++] =  i == passBytes.length - 1 ? (byte) 0 : passBytes[i];
-        }
+        AuthServerMessage message = new RegisterClientRequest(new AuthServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
 
         Socket socket = new Socket("127.0.0.1", 1256);
         OutputStream out = socket.getOutputStream();
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-        out.write(requestBytes);
+        out.write(message.toLEByteArray());
 
-        System.out.println(in.readLine());
+        try {
+            AuthServerMessage response = AuthServerMessage.parse(socket.getInputStream());
+
+            RegisterClientResponse registerRes = (RegisterClientResponse) response;
+            System.out.println("Register id: " + registerRes.getBody().toString());
+
+        } catch (InvalidMessageException e) {
+            e.printStackTrace();
+            error("Failed to parse response due to: %s", e);
+
+        }
 
     }
 
