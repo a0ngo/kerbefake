@@ -35,12 +35,17 @@ public final class ClientRegisterTest {
 
         requestHeader[16] = 4;
 
-        byte[] requestBytes = new byte[header.getRawHeader().length + name.length() + password.length() + 2];
+        byte[] requestBytes = new byte[requestHeader.length + name.length() + password.length() + 2];
         int reqByteIdx = 0;
-        byte[] headerBytes = header.getRawHeader();
-        for (int i = 0; i < headerBytes.length; i++) {
-            requestBytes[reqByteIdx++] = headerBytes[i];
+       // byte[] headerBytes = header.getRawHeader();
+        // for (int i = 0; i < headerBytes.length; i++) {
+        //     requestBytes[reqByteIdx++] = headerBytes[i];
+        //  }
+
+        for (int i = 0; i < requestHeader.length; i++) {
+            requestBytes[reqByteIdx++] = requestHeader[i];
         }
+
         byte[] nameBytes = name.getBytes();
         byte[] passBytes = password.getBytes();
         for (int i = 0; i <= nameBytes.length; i++) {
