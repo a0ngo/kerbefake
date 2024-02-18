@@ -30,7 +30,7 @@ public class RegisterClientRequest extends AuthServerMessage implements AuthServ
         KnownClients clients = KnownClients.getInstance();
         MessageDigest digest;
 
-        FailureResponse failedResponse = new FailureResponse(this.header.alter(MessageCode.REGISTER_CLIENT_FAILED, 0));
+        FailureResponse failedResponse = new FailureResponse(this.header.toResponseHeader(MessageCode.REGISTER_CLIENT_FAILED, 0));
 
 
         info("Trying to execute register client request.");
@@ -62,6 +62,6 @@ public class RegisterClientRequest extends AuthServerMessage implements AuthServ
             return failedResponse;
         }
 
-        return new RegisterClientResponse(this.header.alter(MessageCode.REGISTER_CLIENT_SUCCESS, 16), new RegisterClientResponseBody(id));
+        return new RegisterClientResponse(this.header.toResponseHeader(MessageCode.REGISTER_CLIENT_SUCCESS, 16), new RegisterClientResponseBody(id));
     }
 }
