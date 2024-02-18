@@ -2,7 +2,6 @@ package kerbefake.models.auth_server;
 
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.errors.InvalidMessageCodeException;
-import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -34,6 +33,9 @@ public abstract class AuthServerMessageBody {
 
     public static AuthServerMessageBody parse(AuthServerMessageHeader header, BufferedInputStream stream) throws InvalidMessageException {
         int payloadSize = header.getPayloadSize();
+        if (payloadSize == 0) {
+            return null;
+        }
         byte[] bodyBytes = new byte[payloadSize];
 
         try {
@@ -44,7 +46,7 @@ public abstract class AuthServerMessageBody {
             }
 
             try {
-                return header.getCode().getBodyClazz().getConstructor().newInstance().parse(bodyBytes);
+                return header.getCode().getBodyClass().getConstructor().newInstance().parse(bodyBytes);
             } catch (InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 error("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
