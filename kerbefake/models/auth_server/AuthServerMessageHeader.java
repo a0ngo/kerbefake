@@ -27,6 +27,11 @@ public class AuthServerMessageHeader implements Message {
 
     private int payloadSize;
 
+    public AuthServerMessageHeader(byte version, MessageCode code, int payloadSize) {
+        this(null, version, code, payloadSize);
+    }
+
+
     public AuthServerMessageHeader(String clientID, byte version, MessageCode code, int payloadSize) {
         this.clientID = clientID;
         this.version = version;
@@ -62,8 +67,8 @@ public class AuthServerMessageHeader implements Message {
      * @param payloadSize - the  new payload size to use
      * @return the new header.
      */
-    public AuthServerMessageHeader alter(MessageCode newCode, int payloadSize) {
-        return new AuthServerMessageHeader(this.clientID, this.version, newCode, payloadSize);
+    public AuthServerMessageHeader toResponseHeader(MessageCode newCode, int payloadSize) {
+        return new AuthServerMessageHeader(this.version, newCode, payloadSize);
     }
 
     /**
@@ -74,15 +79,20 @@ public class AuthServerMessageHeader implements Message {
      * @throws InvalidMessageCodeException - In case the data provided is invalid.
      */
     public static AuthServerMessageHeader parseHeader(byte[] rawHeader) throws InvalidMessageCodeException {
-        if (rawHeader == null || rawHeader.length != Constants.REQUEST_HEADER_SIZE) {
+        if (rawHeader == null || (rawHeader.length != Constants.REQUEST_HEADER_SIZE && rawHeader.length != Constants.RESPONSE_HEADER_SIZE)) {
             throw new InvalidMessageCodeException("header");
         }
 
-        String clientId = new String(byteArrayToLEByteBuffer(rawHeader, 0, 16).array());
-        byte version = rawHeader[16];
-        byte[] reqCodeBytes = {rawHeader[17], rawHeader[18]};
+        int offset = 0;
+        String clientId = null;
+        if (rawHeader.length == Constants.REQUEST_HEADER_SIZE) {
+            clientId = new String(byteArrayToLEByteBuffer(rawHeader, 0, 16).array());
+            offset += 16;
+        }
+        byte version = rawHeader[offset++];
+        byte[] reqCodeBytes = {rawHeader[offset++], rawHeader[offset++]};
         MessageCode reqCode = MessageCode.parse(reqCodeBytes);
-        int payloadSize = byteArrayToLEByteBuffer(rawHeader, 19, 4).getInt();
+        int payloadSize = byteArrayToLEByteBuffer(rawHeader, offset, 4).getInt();
 
         if (payloadSize < 0) {
             throw new InvalidMessageCodeException("Payload Size");
@@ -105,21 +115,23 @@ public class AuthServerMessageHeader implements Message {
         }
 
         // Byte array size is constant
-        byte[] byteArr = new byte[Constants.REQUEST_HEADER_SIZE];
-        byte[] idByteArr = strToLEByteArray(this.clientID);
+        byte[] byteArr = new byte[this.clientID == null ? Constants.RESPONSE_HEADER_SIZE : Constants.REQUEST_HEADER_SIZE];
         byte[] versionByteArray = new byte[]{this.version};
         byte[] messageCode = this.code.toLEByteArray();
         byte[] payloadSize = intToLEByteArray(this.payloadSize);
         int offsetCounter = 0;
 
-        System.arraycopy(idByteArr, 0, byteArr, offsetCounter, idByteArr.length);
-        offsetCounter += idByteArr.length;
+        if (this.clientID != null) {
+            byte[] idByteArr = strToLEByteArray(this.clientID);
+            System.arraycopy(idByteArr, 0, byteArr, offsetCounter, idByteArr.length);
+            offsetCounter += idByteArr.length;
+        }
         System.arraycopy(versionByteArray, 0, byteArr, (offsetCounter++), 1);
         System.arraycopy(messageCode, 0, byteArr, offsetCounter, 2);
         offsetCounter += 2;
         System.arraycopy(payloadSize, 0, byteArr, offsetCounter, 4);
 
-        this.rawHeader = ByteBuffer.allocate(23).order(ByteOrder.LITTLE_ENDIAN).put(byteArr).array();
+        this.rawHeader = ByteBuffer.allocate(byteArr.length).order(ByteOrder.LITTLE_ENDIAN).put(byteArr).array();
         return this.toLEByteArray();
     }
 }

@@ -50,8 +50,12 @@ public abstract class AuthServerMessage {
 
 
     public static AuthServerMessage parse(InputStream stream) throws InvalidMessageException {
+        return AuthServerMessage.parse(stream, false);
+    }
+
+    public static AuthServerMessage parse(InputStream stream, boolean isResponse) throws InvalidMessageException {
         BufferedInputStream in = new BufferedInputStream(stream);
-        AuthServerMessageHeader header = AuthServerMessage.readHeader(in);
+        AuthServerMessageHeader header = AuthServerMessage.readHeader(in, isResponse);
         if (header == null) {
             throw new InvalidMessageException();
         }
@@ -87,15 +91,15 @@ public abstract class AuthServerMessage {
      * @param in - the input stream
      * @return An {@link AuthServerMessageHeader} or null in case of an error.
      */
-    private static AuthServerMessageHeader readHeader(BufferedInputStream in) {
+    private static AuthServerMessageHeader readHeader(BufferedInputStream in, boolean isResponse) {
         try {
-            byte[] headerBytes = new byte[Constants.REQUEST_HEADER_SIZE];
+            byte[] headerBytes = new byte[isResponse ? Constants.RESPONSE_HEADER_SIZE : Constants.REQUEST_HEADER_SIZE];
             int readBytes = in.read(headerBytes);
 
             /*
              * -1 is required here because there might be a request with only 23 bytes (just the header, with 0 payload)
              */
-            if (readBytes != Constants.REQUEST_HEADER_SIZE && readBytes != -1) {
+            if (readBytes != headerBytes.length && readBytes != -1) {
                 error("Failed to read header, expected 23 bytes but got %d", readBytes);
                 return null;
             }

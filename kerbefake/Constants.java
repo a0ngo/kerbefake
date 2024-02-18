@@ -19,6 +19,10 @@ public final class Constants {
      */
     public static final int REQUEST_HEADER_SIZE = 23;
 
+    /**
+     * The response header size.
+     */
+    public static final int RESPONSE_HEADER_SIZE = 9;
     public static final String CLIENTS_FILE_NAME = "./clients";
 
     public static final String DATE_FORMAT = "hh.mm.ss dd/MM/yyyy";
