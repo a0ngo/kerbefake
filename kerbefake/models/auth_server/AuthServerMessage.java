@@ -3,15 +3,11 @@ package kerbefake.models.auth_server;
 import kerbefake.Constants;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.errors.InvalidMessageCodeException;
-import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
-import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
-import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
-import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -62,10 +58,24 @@ public abstract class AuthServerMessage {
         AuthServerMessageBody body = AuthServerMessageBody.parse(header, in);
 
         MessageCode messageCode = header.getCode();
+
+        /*
+         * Here we parse a message according to the specified message class in MessageCode.
+         * We expect there to be a constructor of signature (AuthServerMessageHeader header) or
+         * (AuthServerMessageHeader header, AuthServerMessageBody body).
+         */
         try {
-            return messageCode.getMessageClazz().getConstructor(AuthServerMessageHeader.class, messageCode.getBodyClazz()).newInstance(header, messageCode.getBodyClazz().cast(body));
+            Class<? extends AuthServerMessage> messageClass = messageCode.getMessageClass();
+            Class<? extends AuthServerMessageBody> bodyClass = messageCode.getBodyClass();
+            if (bodyClass == null) {
+                return messageClass.getConstructor(AuthServerMessageHeader.class).newInstance(header);
+            }
+
+            return messageClass.getConstructor(AuthServerMessageHeader.class, messageCode.getBodyClass())
+                    .newInstance(header, messageCode.getBodyClass().cast(body));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
+            // See above note if you face this error.
             error("Failed to create new message class due to: %s", e);
             throw new InvalidMessageException(String.format("Failed to create a message class due to: %s", e));
         }
@@ -74,7 +84,7 @@ public abstract class AuthServerMessage {
     /**
      * Reads the header from the input stream.
      *
-     * @param in - the input strema
+     * @param in - the input stream
      * @return An {@link AuthServerMessageHeader} or null in case of an error.
      */
     private static AuthServerMessageHeader readHeader(BufferedInputStream in) {
