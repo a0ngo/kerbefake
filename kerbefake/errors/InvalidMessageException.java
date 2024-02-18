@@ -5,7 +5,7 @@ import kerbefake.models.auth_server.MessageCode;
 public class InvalidMessageException extends Exception{
 
     public InvalidMessageException(MessageCode code){
-        super(String.format("Unkown message code: %d", code.getCode()));
+        super(String.format("Unknown message code: %d", code.getCode()));
     }
 
     public InvalidMessageException(String message){
