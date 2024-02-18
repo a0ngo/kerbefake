@@ -41,7 +41,7 @@ public final class ClientRegisterTest {
         out.write(message.toLEByteArray());
 
         try {
-            AuthServerMessage response = AuthServerMessage.parse(socket.getInputStream());
+            AuthServerMessage response = AuthServerMessage.parse(socket.getInputStream(), true);
 
             RegisterClientResponse registerRes = (RegisterClientResponse) response;
             System.out.println("Register id: " + registerRes.getBody().toString());
