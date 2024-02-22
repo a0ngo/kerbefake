@@ -43,6 +43,8 @@ public final class Constants {
         public static final short REGISTER_CLIENT_SUCCESS_CODE = 1600;
 
         public static final short REGISTER_CLIENT_FAILURE_CODE = 1601;
+
+        public static final short UNKNOWN_FAILURE_CODE = 1609;
     }
 
 }

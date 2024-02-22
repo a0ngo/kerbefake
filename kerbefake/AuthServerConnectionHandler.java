@@ -2,7 +2,10 @@ package kerbefake;
 
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.auth_server.AuthServerMessage;
+import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.auth_server.MessageCode;
 import kerbefake.models.auth_server.requests.AuthServerRequest;
+import kerbefake.models.auth_server.responses.FailureResponse;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -35,6 +38,7 @@ public class AuthServerConnectionHandler implements Runnable {
             return;
         }
 
+        FailureResponse unknownFailure = new FailureResponse(new AuthServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
         while (true) {
             try {
                 AuthServerMessage message = AuthServerMessage.parse(in);
@@ -54,17 +58,35 @@ public class AuthServerConnectionHandler implements Runnable {
                 e.printStackTrace();
                 error("Failed to parse message due to: %s", e);
                 try {
-                    this.conn.close();
+                    out.write(unknownFailure.toLEByteArray());
+                    break;
                 } catch (IOException ex) {
-                    error("Failed to close socket due to: %s", e);
+                    error("Failed to write failure response: %s", e);
+                    break;
                 }
-                return;
 
             } catch (IOException e) {
                 e.printStackTrace();
-                error("Failed to send response due to: %s", e);
-                // Hopefully this will be fixed later one.
+                error("Failed to send response due to: %s - terminating the connection", e);
+                break;
+
+            } catch (Exception e){
+                try {
+                    out.write(unknownFailure.toLEByteArray());
+                } catch (IOException ex) {
+                    e.printStackTrace();
+                    error("Failed to send response due to: %s", e);
+                    // Hopefully this will be fixed later one.
+                }
+                break;
             }
+        }
+
+        try{
+            this.conn.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            error("Failed to close socket due to: %s", e);
         }
     }
 
