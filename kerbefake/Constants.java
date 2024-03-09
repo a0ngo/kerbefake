@@ -36,6 +36,8 @@ public final class Constants {
          * Request code for registering clients.
          */
         public static final short REGISTER_CLIENT_CODE = 1024;
+
+        public static final short REQ_ENC_SYM_KEY = 1027;
     }
 
 
@@ -43,6 +45,8 @@ public final class Constants {
         public static final short REGISTER_CLIENT_SUCCESS_CODE = 1600;
 
         public static final short REGISTER_CLIENT_FAILURE_CODE = 1601;
+
+        public static final short SEND_ENC_SYM_KEY = 1603;
 
         public static final short UNKNOWN_FAILURE_CODE = 1609;
     }

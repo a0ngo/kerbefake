@@ -1,8 +1,14 @@
 package kerbefake;
 
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -111,5 +117,69 @@ public final class Utils {
      */
     public static byte[] intToLEByteArray(int i) {
         return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(i).array();
+    }
+
+    /**
+     * Given a key an IV encrypt a value provided.
+     *
+     * @param key            - the key to use for encryption
+     * @param iv             - the IV to use for encryption
+     * @param valueToEncrypt - the value to encrypt
+     * @return - a byte array of the value encrypted.
+     */
+    public static byte[] encrypt(byte[] key, byte[] iv, byte[] valueToEncrypt) {
+        return performCryptoOp(key, iv, valueToEncrypt, true);
+    }
+
+    /**
+     * Given a key and an IV decrypt a value provided.
+     *
+     * @param key            - the key to use for decryption
+     * @param iv             - the IV to use for decryption
+     * @param valueToDecrypt - the value to decrypt
+     * @return - a byte array of the decrypted value.
+     */
+    public static byte[] decrypt(byte[] key, byte[] iv, byte[] valueToDecrypt) {
+        return performCryptoOp(key, iv, valueToDecrypt, false);
+    }
+
+    /**
+     * Performs an encryption or decryption on a given value using the provided key and IV.
+     *
+     * @param key   - the key to use
+     * @param iv    - the IV to use
+     * @param value - the value to perform the operation on
+     * @param enc   - a flag to mark encryption, if false will decrypt
+     * @return - a byte array with the relevant value.
+     */
+    private static byte[] performCryptoOp(byte[] key, byte[] iv, byte[] value, boolean enc) {
+        SecretKey secret = new SecretKeySpec(key, "AES");
+        Cipher cipher;
+        try {
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
+            return cipher.doFinal(value);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
+            // Shouldn't happen
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Verifies that an array of bytes is of a specific length, is not null and is not all zeros.
+     * @param arr - the array to check
+     * @param n - the expected length
+     * @return - true if it is not zero and is of the specified length.
+     */
+    public static boolean assertNonZeroedByteArrayOfLengthN(byte[] arr, int n){
+        if(arr == null || arr.length != n) {
+            return false;
+        }
+
+        boolean zeroed = true;
+        for(byte b : arr ) zeroed &= (b == 0);
+
+        return !zeroed;
     }
 }
