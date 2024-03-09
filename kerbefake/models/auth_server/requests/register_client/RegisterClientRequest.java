@@ -27,7 +27,7 @@ public class RegisterClientRequest extends AuthServerMessage implements AuthServ
     @Override
     public AuthServerMessage execute() {
         RegisterClientRequestBody body = (RegisterClientRequestBody) this.body;
-        KnownClients clients = KnownClients.getInstance();
+        KnownPeers clients = KnownPeers.getInstance();
         MessageDigest digest;
 
         FailureResponse failedResponse = new FailureResponse(this.header.toResponseHeader(MessageCode.REGISTER_CLIENT_FAILED, 0));
