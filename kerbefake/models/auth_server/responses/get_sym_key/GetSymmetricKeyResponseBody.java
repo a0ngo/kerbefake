@@ -18,6 +18,13 @@ public class GetSymmetricKeyResponseBody extends AuthServerMessageBody {
 
     private Ticket ticket;
 
+    public GetSymmetricKeyResponseBody(){}
+
+    public GetSymmetricKeyResponseBody(String clientId, EncryptedKey encKey, Ticket ticket) {
+        this.clientId = clientId;
+        this.encKey = encKey;
+        this.ticket = ticket;
+    }
 
     @Override
     public AuthServerMessageBody parse(byte[] bodyBytes) throws Exception {
