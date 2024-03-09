@@ -2,9 +2,13 @@ package kerbefake.models.auth_server;
 
 import kerbefake.Constants;
 import kerbefake.errors.InvalidMessageCodeException;
+import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
+import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
 import kerbefake.models.auth_server.responses.FailureResponse;
+import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
 
@@ -36,6 +40,15 @@ public enum MessageCode {
      */
     REGISTER_CLIENT_FAILED(Constants.ResponseCodes.REGISTER_CLIENT_FAILURE_CODE, FailureResponse.class, null),
 
+    /**
+     * A user requests a symmetric key to communicate with a message server.
+     */
+    REQUEST_SYMMETRIC_KEY(Constants.RequestCodes.REQ_ENC_SYM_KEY, GetSymmetricKeyRequest.class, GetSymmetricKeyRequestBody.class),
+
+    /**
+     * Success response for getting a symmetric key for communication.
+     */
+    REQUEST_SYMMETRIC_KEY_SUCCESS(Constants.ResponseCodes.SEND_ENC_SYM_KEY, GetSymmetricKeyResponse.class, GetSymmetricKeyResponseBody.class),
 
     UNKNOWN_FAILURE(Constants.ResponseCodes.UNKNOWN_FAILURE_CODE, FailureResponse.class, null);
     /**
