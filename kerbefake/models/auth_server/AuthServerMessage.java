@@ -24,6 +24,9 @@ public abstract class AuthServerMessage {
     protected AuthServerMessageBody body;
 
     public AuthServerMessage(AuthServerMessageHeader header, AuthServerMessageBody body) {
+        if(header == null){
+            throw new RuntimeException("No header was provided");
+        }
         this.header = header;
         this.body = body;
     }
