@@ -2,12 +2,17 @@ package kerbefake.models;
 
 import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
+import kerbefake.models.auth_server.MessageField;
 
 import java.nio.charset.StandardCharsets;
 
+import static kerbefake.Logger.error;
+import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.Utils.byteArrayToLEByteBuffer;
 
-public class Ticket {
+public class Ticket implements MessageField {
+
+    public static final int SIZE = 105;
 
     private byte version;
     private String clientId;
@@ -20,9 +25,14 @@ public class Ticket {
 
     private byte[] aesKey;
 
+    private byte[] encAesKey;
+
     private byte[] expTime;
 
-    private Ticket(){}
+    private byte[] encExpTime;
+
+    public Ticket() {
+    }
 
     public Ticket setVersion(byte version) {
         this.version = version;
@@ -59,9 +69,63 @@ public class Ticket {
         return this;
     }
 
+    private Ticket setEncAesKey(byte[] encAesKey) {
+        this.encAesKey = encAesKey;
+        return this;
+    }
+
+    private Ticket setEncExpTime(byte[] encExpTime) {
+        this.encExpTime = encExpTime;
+        return this;
+    }
+
+    public boolean decrypt(byte[] key) {
+        if (!assertNonZeroedByteArrayOfLengthN(this.ticketIv, 16)) {
+            return false;
+        }
+        try {
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean encrypt(byte[] key) {
+        if (!assertNonZeroedByteArrayOfLengthN(this.ticketIv, 16)) {
+            return false;
+        }
+        if (this.expTime == null || this.aesKey == null || this.expTime.length != 8 || this.aesKey.length != 32) {
+            error("Missing nonce or aes key for encryption.");
+            return false;
+        }
+
+        if (!assertNonZeroedByteArrayOfLengthN(this.expTime, 8)) {
+            error("Expiration time is zeroed out");
+            return false;
+        }
+
+        // TODO: Do we allow a zeroed AES? it might imply a lack of initialization
+        try {
+            setEncExpTime(Utils.encrypt(key, ticketIv, this.expTime));
+            setEncAesKey(Utils.decrypt(key, ticketIv, this.aesKey));
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+
+    }
+
+
     public static Ticket parse(byte[] bytes) throws InvalidMessageException {
-        if (bytes.length != 97) {
-            throw new InvalidMessageException("Ticket byte size must be 97");
+        /*
+        Parsing the ticket assumes that the fields aesKey and expTime are encrypted.
+        As a result their size is not the same as the size specified in the protocol since expTime is 8 bytes but
+        encrypted it'll be 16.
+         */
+
+        if (bytes.length != SIZE) {
+            throw new InvalidMessageException("Ticket byte size must be 105");
         }
 
         int offset = 1;
@@ -75,14 +139,14 @@ public class Ticket {
         offset += 16;
         byte[] aesKey = byteArrayToLEByteBuffer(bytes, offset, 32).array();
         offset += 32;
-        byte[] expTime = byteArrayToLEByteBuffer(bytes, offset, 8).array();
+        byte[] expTime = byteArrayToLEByteBuffer(bytes, offset, 16).array();
 
         return new Ticket().setVersion(bytes[0]).setClientId(new String(clientIdBytes, StandardCharsets.UTF_8))
                 .setServerId(new String(serverIdBytes, StandardCharsets.UTF_8))
                 .setCreationTime(creationTime)
                 .setTicketIv(ticketIv)
-                .setAesKey(aesKey)
-                .setExpTime(expTime);
+                .setEncAesKey(aesKey)
+                .setEncExpTime(expTime);
     }
 
     public byte[] toLEByteArray() {
@@ -98,14 +162,14 @@ public class Ticket {
         if (ticketIv == null || ticketIv.length != 16) {
             throw new RuntimeException("Ticket IV is missing or invalid");
         }
-        if (aesKey == null || aesKey.length != 32) {
-            throw new RuntimeException("AES Key is missing or invalid");
+        if (encAesKey == null || encAesKey.length != 32) {
+            throw new RuntimeException("AES Key is missing or invalid - make sure to run encrypt before converting to LE Byte array");
         }
-        if (expTime == null || expTime.length != 8) {
-            throw new RuntimeException("Expiration time is missing or invalid");
+        if (encExpTime == null || encExpTime.length != 16) {
+            throw new RuntimeException("Expiration time is missing or invalid - make sure to run encrypt before converting to LE Byte array");
         }
 
-        byte[] byteArr = new byte[97];
+        byte[] byteArr = new byte[SIZE];
         byteArr[0] = version;
         int offset = 1;
 
@@ -117,9 +181,9 @@ public class Ticket {
         offset += creationTime.length;
         System.arraycopy(ticketIv, 0, byteArr, offset, ticketIv.length);
         offset += ticketIv.length;
-        System.arraycopy(aesKey, 0, byteArr, offset, aesKey.length);
-        offset += aesKey.length;
-        System.arraycopy(expTime, 0, byteArr, offset, expTime.length);
+        System.arraycopy(encAesKey, 0, byteArr, offset, encAesKey.length);
+        offset += encAesKey.length;
+        System.arraycopy(expTime, 0, byteArr, offset, encExpTime.length);
 
         return byteArrayToLEByteBuffer(byteArr).array();
 
