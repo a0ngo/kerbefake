@@ -1,20 +1,13 @@
 package kerbefake;
 
-import kerbefake.errors.InvalidClientDataException;
-import kerbefake.errors.InvalidMessageServerDataException;
-import kerbefake.models.auth_server.ClientEntry;
-import kerbefake.models.auth_server.KnownClients;
-import kerbefake.models.auth_server.MessageServerEntry;
+import kerbefake.models.auth_server.KnownPeers;
 
 import javax.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import static kerbefake.Constants.DEFAULT_PORT_AUTH_SERVER;
 import static kerbefake.Logger.error;
-import static kerbefake.Logger.info;
 
 /**
  * A class which handles all the functionality of the authentication server.
@@ -27,8 +20,7 @@ public class AuthServer {
     public void start() {
         int port = loadPort();
         // Just to get it to load all the needed data before we start serving requests
-        KnownClients.getInstance();
-        ArrayList<MessageServerEntry> knownMessageServers = readMsgServerData();
+        KnownPeers.getInstance();
         ServerSocket socket;
         try {
             socket = ServerSocketFactory.getDefault().createServerSocket();
@@ -72,39 +64,4 @@ public class AuthServer {
         return DEFAULT_PORT_AUTH_SERVER;
     }
 
-    /**
-     * Reads the msg.info file and returns an arraylist with all the registered message servers.
-     *
-     * @return an ArrayList of all the message server entries.
-     */
-    private ArrayList<MessageServerEntry> readMsgServerData() {
-        BufferedReader serverReader;
-        ArrayList<MessageServerEntry> servers = new ArrayList<>();
-        try {
-            serverReader = new BufferedReader(new FileReader("msg.info"));
-        } catch (FileNotFoundException e) {
-            error("Unable to find msg.info file, no messaging server provided.");
-            return servers;
-        }
-
-        String ipAddr, name, id, b64SymKey;
-        try {
-            ipAddr = serverReader.readLine();
-            name = serverReader.readLine();
-            id = serverReader.readLine();
-            b64SymKey = serverReader.readLine();
-        } catch (IOException e) {
-            error("Failed to read line from msg.info file, must have 4 lines in the following order:\nIP:port\nName\nId (hex)\nBase64 Symmetric key\nFailure happened due to: %s", e);
-            return servers;
-        }
-
-        try {
-            servers.add(MessageServerEntry.parseMessageEntryData(ipAddr, name, id, b64SymKey));
-        } catch (InvalidMessageServerDataException e) {
-            error("Failed to parse message server entry due to %e", e);
-            return servers;
-        }
-
-        return servers;
-    }
 }

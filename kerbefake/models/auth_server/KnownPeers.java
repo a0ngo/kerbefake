@@ -2,30 +2,34 @@ package kerbefake.models.auth_server;
 
 import kerbefake.Constants;
 import kerbefake.errors.InvalidClientDataException;
+import kerbefake.errors.InvalidMessageServerDataException;
 
 import java.io.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static kerbefake.Logger.*;
 
-public final class KnownClients {
+public final class KnownPeers {
 
-    private static KnownClients instance;
+    private static KnownPeers instance;
 
     private final Map<String, ClientEntry> clients;
 
-    private KnownClients(){
+    private final Map<String, MessageServerEntry> servers;
+
+    private KnownPeers() {
         clients = Collections.synchronizedMap(new HashMap<>());
+        servers = Collections.synchronizedMap(new HashMap<>());
         readAllClients();
-        flushEntireFile();
+        flushClientsFile();
+        readMsgServerData();
         instance = this;
     }
 
     /**
      * Reads and parses all the clients from the ./clients file.
-     * In case of an error the {@link KnownClients#clients} field will be cleared and then flushed (i.e. the clients will be reset)
+     * In case of an error the {@link KnownPeers#clients} field will be cleared and then flushed (i.e. the clients will be reset)
      * The data is stored with the following structure:
      * ID:Name:PasswordHash:LastSeen
      * <p>
@@ -38,7 +42,7 @@ public final class KnownClients {
      *
      * @return An HashMap of clients if such data exists in persistent storage, if not an empty HashMap.
      */
-    private void readAllClients(){
+    private void readAllClients() {
         BufferedReader clientReader;
         try {
             clientReader = new BufferedReader(new FileReader(Constants.CLIENTS_FILE_NAME));
@@ -57,7 +61,7 @@ public final class KnownClients {
                 return;
             }
 
-            if(clientLine == null){
+            if (clientLine == null) {
                 break;
             }
 
@@ -72,10 +76,44 @@ public final class KnownClients {
         }
     }
 
+
+    /**
+     * Reads the msg.info file and returns an arraylist with all the registered message servers.
+     *
+     * @return an ArrayList of all the message server entries.
+     */
+    private void readMsgServerData() {
+        BufferedReader serverReader;
+        try {
+            serverReader = new BufferedReader(new FileReader("msg.info"));
+        } catch (FileNotFoundException e) {
+            error("Unable to find msg.info file, no messaging server provided.");
+            throw new RuntimeException(e);
+        }
+
+        String ipAddr, name, id, b64SymKey;
+        try {
+            ipAddr = serverReader.readLine();
+            name = serverReader.readLine();
+            id = serverReader.readLine();
+            b64SymKey = serverReader.readLine();
+        } catch (IOException e) {
+            error("Failed to read line from msg.info file, must have 4 lines in the following order:\nIP:port\nName\nId (hex)\nBase64 Symmetric key\nFailure happened due to: %s", e);
+            throw new RuntimeException(e);
+        }
+
+        try {
+            servers.put(id, MessageServerEntry.parseMessageEntryData(ipAddr, name, id, b64SymKey));
+        } catch (InvalidMessageServerDataException e) {
+            error("Failed to parse message server entry due to %e", e);
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Tries to flush the entire known client list to a file (resets the file)
      */
-    private void flushEntireFile(){
+    private void flushClientsFile() {
         debug("Flushing known clients to file");
         BufferedWriter writer;
         try {
@@ -99,6 +137,7 @@ public final class KnownClients {
      * Tries to add a new client entry to the known clients map.
      * The method is synchronized and since the class is a singleton it will synchronize on the object for all callers / users of the class
      * The method will also persist the data
+     *
      * @param entry - the entry to add
      * @return - false if failed, true if successful
      * @throws RuntimeException - in case of a UUID collision
@@ -106,7 +145,7 @@ public final class KnownClients {
     public synchronized boolean tryAddClientEntry(ClientEntry entry) {
         debug("Trying to adding client entry: %s %s", entry.getId(), entry.getName());
 
-        if(clients.values().stream().anyMatch(v -> v.getName().equals(entry.getName()))){
+        if (clients.values().stream().anyMatch(v -> v.getName().equals(entry.getName()))) {
             warn("Client with the same name already found.");
             return false;
         }
@@ -118,8 +157,8 @@ public final class KnownClients {
             error("Failed to open file to write clients due to: %s", e);
             return false;
         }
-        if(clients.containsKey(entry.getId())){
-             // This shouldn't happen as UUID is very unlikely to yield a collision
+        if (clients.containsKey(entry.getId())) {
+            // This shouldn't happen as UUID is very unlikely to yield a collision
             throw new RuntimeException("Duplicate client ID detected!");
         }
         clients.put(entry.getId(), entry);
@@ -134,7 +173,27 @@ public final class KnownClients {
         return true;
     }
 
-    public static KnownClients getInstance() {
-        return instance == null ? new KnownClients() : instance;
+    // TODO: Code duplication cleanup
+    public synchronized ClientEntry getClient(String clientID) {
+        debug("Trying to fetch client: %s", clientID);
+        List<ClientEntry> matchingClients = clients.values().stream().filter(v -> v.getId().equals(clientID)).collect(Collectors.toList());
+        if (matchingClients.size() > 1) {
+            throw new RuntimeException("More than a single client with the same ID found!");
+        }
+        return matchingClients.size() == 0 ? null : matchingClients.get(0);
+    }
+
+    public synchronized MessageServerEntry getSever(String serverId){
+        debug("Trying to fetch server for ID: %s", serverId);
+        List<MessageServerEntry> matchingServers = servers.values().stream().filter(v -> v.getId().equals(serverId)).collect(Collectors.toList());
+        if(matchingServers.size() > 1){
+            throw new RuntimeException("More than a single server with the same ID found!");
+        }
+
+        return matchingServers.size() == 0 ? null : matchingServers.get(0);
+    }
+
+    public static KnownPeers getInstance() {
+        return instance == null ? new KnownPeers() : instance;
     }
 }

@@ -1,42 +1,16 @@
 package kerbefake.models.auth_server.requests;
 
-import kerbefake.errors.InvalidRequestException;
-import kerbefake.errors.RequestExecutionException;
-import kerbefake.models.auth_server.AuthServerRequestHeader;
+import kerbefake.models.auth_server.AuthServerMessage;
 
 /**
  * An abstract class representing a request to the authentication server
  */
-public abstract class AuthServerRequest<B extends AuthServerRequestBody, E> {
-
-    protected AuthServerRequestHeader header;
-    protected B body;
-
-    public AuthServerRequest(AuthServerRequestHeader header, B body){
-        this.header = header;
-        this.body = body;
-    }
-
-    public AuthServerRequestHeader getHeader() {
-        return header;
-    }
-
-    public B getBody() {
-        return body;
-    }
+public interface AuthServerRequest {
 
     /**
-     * Executes the request that was provided
+     * Executes this request and returns the response (in case of a failure returns {@link kerbefake.models.auth_server.responses.FailureResponse}.
+     *
+     * @return a response (in the form of an AuthServerMessage) or {@link kerbefake.models.auth_server.responses.FailureResponse} in case of a failure.
      */
-    public abstract E execute() throws RequestExecutionException;
-
-    public static <B extends AuthServerRequestBody> AuthServerRequest<? extends AuthServerRequestBody, ?> buildFor(AuthServerRequestHeader header, B body) throws InvalidRequestException {
-        switch(header.getCode()){
-            case REGISTER_CLIENT:
-                return new RegisterClientRequest(header, (RegisterClientRequestBody) body);
-            default:
-                throw new InvalidRequestException("Code");
-        }
-    }
-
+    AuthServerMessage execute();
 }
