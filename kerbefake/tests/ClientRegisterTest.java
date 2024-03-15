@@ -32,7 +32,35 @@ public final class ClientRegisterTest {
         String password = "strongPassword123!\0";
         int payloadSize = name.length() + password.length();
 
+<<<<<<< HEAD
+        for(int i = 0; i < 16 ; i++){
+            requestHeader[i] = (byte)randomId.charAt(i);
+        }
+
+        requestHeader[16] = 4;
+
+        byte[] requestBytes = new byte[requestHeader.length + name.length() + password.length() + 2];
+        int reqByteIdx = 0;
+       // byte[] headerBytes = header.getRawHeader();
+        // for (int i = 0; i < headerBytes.length; i++) {
+        //     requestBytes[reqByteIdx++] = headerBytes[i];
+        //  }
+
+        for (int i = 0; i < requestHeader.length; i++) {
+            requestBytes[reqByteIdx++] = requestHeader[i];
+        }
+
+        byte[] nameBytes = name.getBytes();
+        byte[] passBytes = password.getBytes();
+        for (int i = 0; i <= nameBytes.length; i++) {
+            requestBytes[reqByteIdx++] = i == nameBytes.length - 1 ? (byte) 0 : nameBytes[i];
+        }
+        for (int i = 0; i <= passBytes.length; i++) {
+            requestBytes[reqByteIdx++] =  i == passBytes.length - 1 ? (byte) 0 : passBytes[i];
+        }
+=======
         AuthServerMessage message = new RegisterClientRequest(new AuthServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
+>>>>>>> main
 
         Socket socket = new Socket("127.0.0.1", 1256);
         OutputStream out = socket.getOutputStream();
