@@ -156,7 +156,7 @@ public final class Utils {
         SecretKey secret = new SecretKeySpec(key, "AES");
         Cipher cipher;
         try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher = Cipher.getInstance(value.length % 16 == 0 ? "AES/CBC/NoPadding" : "AES/CBC/PKCS5Padding");
             cipher.init(enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
             return cipher.doFinal(value);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
