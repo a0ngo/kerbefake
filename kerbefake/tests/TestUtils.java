@@ -13,15 +13,17 @@ import static kerbefake.Logger.info;
  */
 public final class TestUtils {
 
-    public static void startAuthServer() {
+    public static Thread startAuthServer() {
         AuthServer server = new AuthServer();
-        new Thread(server::start).start();
+        Thread t = new Thread(server::start);
+        t.start();
         try {
             info("Sleeping for 10 seconds to ensure server startup.");
             Thread.sleep(3 * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return t;
     }
 
     public static String generateRandomID() {

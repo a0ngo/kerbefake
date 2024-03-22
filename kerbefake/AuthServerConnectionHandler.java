@@ -21,9 +21,12 @@ public class AuthServerConnectionHandler implements Runnable {
 
     private Socket conn;
 
-    public AuthServerConnectionHandler(Socket conn) {
+    private Thread parentThread;
+
+    public AuthServerConnectionHandler(Socket conn, Thread parentThread) {
         assert conn != null;
         this.conn = conn;
+        this.parentThread = parentThread;
     }
 
     @Override
@@ -39,10 +42,13 @@ public class AuthServerConnectionHandler implements Runnable {
         }
 
         FailureResponse unknownFailure = new FailureResponse(new AuthServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
-        while (true) {
+        while (!parentThread.isInterrupted()) {
+            System.out.println("Is terminated from conn: " + parentThread.isInterrupted());
             try {
                 AuthServerMessage message = AuthServerMessage.parse(in);
-
+                if(message == null){
+                    continue;
+                }
                 // On this specific class we always know that we expect messages that are requests, if there's an issue we simply close the connection;
                 // Because we do actually allow the parsing of a response message here.
                 // This is why we hvae a catch for classcastexception below.

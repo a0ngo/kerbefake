@@ -24,7 +24,7 @@ public final class ClientRegisterTest {
 
     public static void main(String[] args) throws IOException {
         info("Starting test for client registration request.");
-        startAuthServer();
+        Thread handle = startAuthServer();
 
         info("Preparing data for request");
         String randomId = generateRandomID();
@@ -49,8 +49,11 @@ public final class ClientRegisterTest {
         } catch (InvalidMessageException e) {
             e.printStackTrace();
             error("Failed to parse response due to: %s", e);
-
         }
+
+        socket.close();
+        handle.interrupt();
+
 
     }
 

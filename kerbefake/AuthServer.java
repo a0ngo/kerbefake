@@ -5,6 +5,9 @@ import kerbefake.models.auth_server.KnownPeers;
 import javax.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static kerbefake.Constants.DEFAULT_PORT_AUTH_SERVER;
 import static kerbefake.Logger.error;
@@ -13,6 +16,8 @@ import static kerbefake.Logger.error;
  * A class which handles all the functionality of the authentication server.
  */
 public class AuthServer {
+
+    private final ArrayList<Thread> connectionHandles = new ArrayList<>();
 
     /**
      * Starts the authentication server
@@ -25,21 +30,45 @@ public class AuthServer {
         try {
             socket = ServerSocketFactory.getDefault().createServerSocket();
             socket.bind(new InetSocketAddress("0.0.0.0", port));
+            socket.setSoTimeout(1000); // 1 second timeout
         } catch (IOException e) {
             error("Failed to create or bind socket to default port (%d), due to: %s", port, e);
             return;
         }
 
-        while (true) {
+        Timer connCleanupTimer = new Timer();
+        connCleanupTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ArrayList<Thread> connsToDelete = new ArrayList<>();
+                for (int i = 0; i < connectionHandles.size(); i++) {
+                    Thread handle = connectionHandles.get(i);
+                    if (handle.isInterrupted() || !handle.isAlive()) {
+                        connsToDelete.add(handle);
+                    }
+                }
+                for (Thread t : connsToDelete) {
+                    connectionHandles.remove(t);
+                }
+            }
+        }, 60 * 1000); // Every minute, cleanup arraylist of thread handles.
+
+        while (!Thread.currentThread().isInterrupted()) {
             Socket conn = null;
             try {
                 conn = socket.accept();
+            } catch (SocketTimeoutException e) {
+                continue;
             } catch (IOException e) {
                 error("Failed to accept new connection due to: %s", e);
             }
 
-            new Thread(new AuthServerConnectionHandler(conn)).start();
+            Thread threadHandle = new Thread(new AuthServerConnectionHandler(conn, Thread.currentThread()));
+            threadHandle.start();
+            connectionHandles.add(threadHandle);
         }
+
+        connCleanupTimer.cancel();
     }
 
 
