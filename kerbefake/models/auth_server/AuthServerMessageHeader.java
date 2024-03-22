@@ -86,7 +86,7 @@ public class AuthServerMessageHeader implements Message {
         int offset = 0;
         String clientId = null;
         if (rawHeader.length == Constants.REQUEST_HEADER_SIZE) {
-            clientId = new String(byteArrayToLEByteBuffer(rawHeader, 0, 16).array());
+            clientId = bytesToHexString(byteArrayToLEByteBuffer(rawHeader, 0, 16).array());
             offset += 16;
         }
         byte version = rawHeader[offset++];
@@ -122,7 +122,7 @@ public class AuthServerMessageHeader implements Message {
         int offsetCounter = 0;
 
         if (this.clientID != null) {
-            byte[] idByteArr = strToLEByteArray(this.clientID);
+            byte[] idByteArr = hexStringToByteArray(this.clientID);
             System.arraycopy(idByteArr, 0, byteArr, offsetCounter, idByteArr.length);
             offsetCounter += idByteArr.length;
         }
