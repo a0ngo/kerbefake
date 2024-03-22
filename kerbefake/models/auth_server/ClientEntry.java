@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
+import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.error;
 
 /**
@@ -21,7 +22,7 @@ public class ClientEntry {
     private Date lastSeen;
 
     public ClientEntry(String id, String name, byte[] passwordHash, Date lastSeen) throws InvalidClientDataException {
-        if (id.length() != 32 || !id.matches("^[0-9a-f]{32}$")) {
+        if (id.length() != ID_LENGTH || !id.matches("^[0-9a-f]{32}$")) {
             throw new InvalidClientDataException("Id");
         }
         if (passwordHash.length != 32) {
@@ -70,7 +71,7 @@ public class ClientEntry {
         byte[] passHash = Base64.getDecoder().decode(clientLineParts[2]);
         String lastSeen = clientLineParts[3];
 
-        if (id.length() != 16)
+        if (id.length() != 32)
             throw new InvalidClientDataException("Id");
         if (name.length() > 255)
             throw new InvalidClientDataException("Name");

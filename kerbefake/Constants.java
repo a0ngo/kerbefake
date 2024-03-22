@@ -20,6 +20,10 @@ public final class Constants {
     public static final int REQUEST_HEADER_SIZE = 23;
 
     /**
+     * ID length in hex (16 bytes).
+     */
+    public static final int ID_LENGTH = 32;
+    /**
      * The response header size.
      */
     public static final int RESPONSE_HEADER_SIZE = 9;

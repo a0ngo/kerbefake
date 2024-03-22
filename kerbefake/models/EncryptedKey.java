@@ -88,7 +88,7 @@ public class EncryptedKey implements MessageField {
         // TODO: Do we allow a zeroed AES? it might imply a lack of initialization
         try {
             setEncNonce(Utils.encrypt(key, iv, this.nonce));
-            setEncAesKey(Utils.decrypt(key, iv, this.aesKey));
+            setEncAesKey(Utils.encrypt(key, iv, this.aesKey));
 
             return true;
         } catch (RuntimeException e) {

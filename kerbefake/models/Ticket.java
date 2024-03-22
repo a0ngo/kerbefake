@@ -6,9 +6,9 @@ import kerbefake.models.auth_server.MessageField;
 
 import java.nio.charset.StandardCharsets;
 
+import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.error;
-import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
-import static kerbefake.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.Utils.*;
 
 public class Ticket implements MessageField {
 
@@ -108,7 +108,7 @@ public class Ticket implements MessageField {
         // TODO: Do we allow a zeroed AES? it might imply a lack of initialization
         try {
             setEncExpTime(Utils.encrypt(key, ticketIv, this.expTime));
-            setEncAesKey(Utils.decrypt(key, ticketIv, this.aesKey));
+            setEncAesKey(Utils.encrypt(key, ticketIv, this.aesKey));
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -150,10 +150,10 @@ public class Ticket implements MessageField {
     }
 
     public byte[] toLEByteArray() {
-        if (clientId == null || clientId.length() != 16) {
+        if (clientId == null || clientId.length() != ID_LENGTH) {
             throw new RuntimeException("Client id is missing or invalid");
         }
-        if (serverId == null || serverId.length() != 16) {
+        if (serverId == null || serverId.length() != ID_LENGTH) {
             throw new RuntimeException("Server id is missing or invalid");
         }
         if (creationTime == null || creationTime.length != 8) {
@@ -173,17 +173,17 @@ public class Ticket implements MessageField {
         byteArr[0] = version;
         int offset = 1;
 
-        System.arraycopy(clientId.getBytes(), 0, byteArr, offset, clientId.length());
-        offset += clientId.length();
-        System.arraycopy(serverId.getBytes(), 0, byteArr, offset, serverId.length());
-        offset += serverId.length();
+        System.arraycopy(hexStringToByteArray(clientId), 0, byteArr, offset, 16);
+        offset += 16;
+        System.arraycopy(hexStringToByteArray(serverId), 0, byteArr, offset, 16);
+        offset += 16;
         System.arraycopy(creationTime, 0, byteArr, offset, creationTime.length);
         offset += creationTime.length;
         System.arraycopy(ticketIv, 0, byteArr, offset, ticketIv.length);
         offset += ticketIv.length;
         System.arraycopy(encAesKey, 0, byteArr, offset, encAesKey.length);
         offset += encAesKey.length;
-        System.arraycopy(expTime, 0, byteArr, offset, encExpTime.length);
+        System.arraycopy(expTime, 0, byteArr, offset, expTime.length);
 
         return byteArrayToLEByteBuffer(byteArr).array();
 

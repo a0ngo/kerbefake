@@ -37,7 +37,7 @@ public class GetSymmetricKeyRequest extends AuthServerMessage implements AuthSer
 
         GetSymmetricKeyRequestBody body = (GetSymmetricKeyRequestBody) this.body;
 
-        String serverId = new String(body.getServerId());
+        String serverId = body.getServerId();
         if ((server = peers.getSever(serverId)) == null) {
             error("Server ID is not known!");
             return failure;
