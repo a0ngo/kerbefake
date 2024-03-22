@@ -165,10 +165,12 @@ public final class KnownPeers {
 
         try {
             writer.write(entry + "\n");
+            writer.flush();
         } catch (IOException e) {
             error("Failed to write client to file due to: %s", e);
             return false;
         }
+
 
         return true;
     }
