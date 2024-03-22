@@ -168,18 +168,58 @@ public final class Utils {
 
     /**
      * Verifies that an array of bytes is of a specific length, is not null and is not all zeros.
+     *
      * @param arr - the array to check
-     * @param n - the expected length
+     * @param n   - the expected length
      * @return - true if it is not zero and is of the specified length.
      */
-    public static boolean assertNonZeroedByteArrayOfLengthN(byte[] arr, int n){
-        if(arr == null || arr.length != n) {
+    public static boolean assertNonZeroedByteArrayOfLengthN(byte[] arr, int n) {
+        if (arr == null || arr.length != n) {
             return false;
         }
 
         boolean zeroed = true;
-        for(byte b : arr ) zeroed &= (b == 0);
+        for (byte b : arr) zeroed &= (b == 0);
 
         return !zeroed;
+    }
+
+    /**
+     * Converts a byte array to a hex string
+     *
+     * @param bytes - the bytes to convert
+     * @return a hex string corresponding to the byte array
+     */
+    public static String bytesToHexString(byte[] bytes) {
+        final String values = "0123456789abcdef";
+        StringBuilder builder = new StringBuilder();
+        for (byte b : bytes) {
+            int firstDigit = (b & 0xff) >> 4;
+            int secondDigit = b & 0xff & 0x0f;
+            builder.append(values.charAt(firstDigit)).append(values.charAt(secondDigit));
+        }
+        return builder.toString();
+    }
+
+    /**
+     * Converts a hex string to a byte array (signed)
+     *
+     * @param hexString - the hex string to convert
+     * @return a byte array corresponding to the hex string
+     */
+    public static byte[] hexStringToByteArray(String hexString) {
+        String hex = hexString.length() % 2 == 0 ? hexString : "0" + hexString;
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < hex.length(); i += 2) {
+            char leftDigit = hex.charAt(i);
+            char rightDigit = hex.charAt(i + 1);
+            if (leftDigit < '0' || (leftDigit > '9' && leftDigit < 'a') || leftDigit > 'f'
+                    || rightDigit < '0' || (rightDigit > '9' && rightDigit < 'a') || rightDigit > 'f') {
+                throw new RuntimeException("Invalid hex string provided: " + hex);
+            }
+            byte b = (byte) ((Byte.parseByte(String.valueOf(leftDigit), 16) << 4) + Byte.parseByte(String.valueOf(rightDigit), 16));
+            bytes[i / 2] = b;
+        }
+        return bytes;
     }
 }
