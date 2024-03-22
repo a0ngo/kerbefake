@@ -21,7 +21,7 @@ public class ClientEntry {
     private Date lastSeen;
 
     public ClientEntry(String id, String name, byte[] passwordHash, Date lastSeen) throws InvalidClientDataException {
-        if (id.length() != 16) {
+        if (id.length() != 32 || !id.matches("^[0-9a-f]{32}$")) {
             throw new InvalidClientDataException("Id");
         }
         if (passwordHash.length != 32) {

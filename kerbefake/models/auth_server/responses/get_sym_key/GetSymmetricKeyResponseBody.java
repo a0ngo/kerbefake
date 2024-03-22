@@ -9,6 +9,7 @@ import kerbefake.models.auth_server.AuthServerMessageBody;
 import java.nio.charset.StandardCharsets;
 
 import static kerbefake.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.Utils.bytesToHexString;
 
 public class GetSymmetricKeyResponseBody extends AuthServerMessageBody {
 
@@ -32,7 +33,7 @@ public class GetSymmetricKeyResponseBody extends AuthServerMessageBody {
             throw new InvalidMessageException(String.format("Invalid payload size, expected 169, got %d", bodyBytes.length));
         }
 
-        this.clientId = new String(byteArrayToLEByteBuffer(bodyBytes, 0, 16).array(), StandardCharsets.UTF_8);
+        this.clientId = bytesToHexString(byteArrayToLEByteBuffer(bodyBytes, 0, 16).array());
         this.encKey = EncryptedKey.parse(byteArrayToLEByteBuffer(bodyBytes, 16, 56).array());
         this.ticket = Ticket.parse(byteArrayToLEByteBuffer(bodyBytes, 72, 97).array());
 

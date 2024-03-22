@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import static kerbefake.Utils.strToLEByteArray;
+import static kerbefake.Utils.*;
 
 public class RegisterClientResponseBody extends AuthServerMessageBody {
 
@@ -27,13 +27,13 @@ public class RegisterClientResponseBody extends AuthServerMessageBody {
             throw new InvalidResponseDataException("Id");
         }
 
-        this.id = new String(ByteBuffer.wrap(bodyBytes).order(ByteOrder.LITTLE_ENDIAN).array(), StandardCharsets.UTF_8);
+        this.id = bytesToHexString(ByteBuffer.wrap(bodyBytes).order(ByteOrder.LITTLE_ENDIAN).array());
         return this;
     }
 
     @Override
     public byte[] toLEByteArray() {
-        return strToLEByteArray(this.id);
+        return byteArrayToLEByteBuffer(hexStringToByteArray(this.id)).array();
     }
 
     @Override

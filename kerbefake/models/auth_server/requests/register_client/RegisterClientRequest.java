@@ -41,8 +41,7 @@ public class RegisterClientRequest extends AuthServerMessage implements AuthServ
             return failedResponse;
         }
         byte[] passwordHash = digest.digest(body.getPassword().getBytes());
-        String hexUUID = UUID.randomUUID().toString().replace("-", "");
-        String id = hexStrToStr(hexUUID);
+        String id = UUID.randomUUID().toString().replace("-", "");
         boolean addedClient;
         try {
             addedClient = clients.tryAddClientEntry(new ClientEntry(

@@ -13,19 +13,19 @@ import static kerbefake.Logger.error;
 
 public class MessageServerEntry {
 
-    private Socket addr;
+    private String addr;
     private String name;
     private String id;
     private byte[] symmetricKey;
 
-    public MessageServerEntry(Socket addr, String name, String id, byte[] symKey) {
-        this.addr = addr;
+    public MessageServerEntry(String ipAddr, String name, String id, byte[] symKey) {
+        this.addr = ipAddr;
         this.name = name;
         this.id = id;
         this.symmetricKey = symKey;
     }
 
-    public Socket getAddr() {
+    public String getAddr() {
         return addr;
     }
 
@@ -59,22 +59,12 @@ public class MessageServerEntry {
         if (ipAddrComponents.length != 2)
             throw new InvalidMessageServerDataException("Ip");
 
-        String ip = ipAddrComponents[0];
-        int port;
-
         try {
-            port = Integer.parseInt(ipAddrComponents[1]);
+            Integer.parseInt(ipAddrComponents[1]); // Check port is a number
         } catch (NumberFormatException e) {
             throw new InvalidMessageServerDataException("Port in Ip");
         }
 
-        Socket ipAddr;
-        try {
-            ipAddr = new Socket(ip, port);
-        } catch (IOException e) {
-            error("Failed to create a socket for the IP of the messsage server.");
-            throw new InvalidMessageServerDataException("Ip");
-        }
 
         if (name == null)
             throw new InvalidMessageServerDataException("Name");
@@ -94,6 +84,6 @@ public class MessageServerEntry {
             throw new InvalidMessageServerDataException("Symmetric Key");
         }
 
-        return new MessageServerEntry(ipAddr, name, id, symKey);
+        return new MessageServerEntry(addr, name, id, symKey);
     }
 }
