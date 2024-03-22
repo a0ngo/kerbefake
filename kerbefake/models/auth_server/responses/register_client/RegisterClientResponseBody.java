@@ -21,6 +21,10 @@ public class RegisterClientResponseBody extends AuthServerMessageBody {
         this.id = id;
     }
 
+    public String getId() {
+        return id;
+    }
+
     @Override
     public AuthServerMessageBody parse(byte[] bodyBytes) throws Exception {
         if (bodyBytes.length != 16) {

@@ -43,7 +43,6 @@ public class AuthServerConnectionHandler implements Runnable {
 
         FailureResponse unknownFailure = new FailureResponse(new AuthServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
         while (!parentThread.isInterrupted()) {
-            System.out.println("Is terminated from conn: " + parentThread.isInterrupted());
             try {
                 AuthServerMessage message = AuthServerMessage.parse(in);
                 if(message == null){
