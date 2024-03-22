@@ -76,11 +76,11 @@ public class AuthServerConnectionHandler implements Runnable {
                 break;
 
             } catch (Exception e){
+                error("Failed to send response due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
                 } catch (IOException ex) {
                     e.printStackTrace();
-                    error("Failed to send response due to: %s", e);
                     // Hopefully this will be fixed later one.
                 }
                 break;
