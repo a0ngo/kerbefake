@@ -27,7 +27,6 @@ public class Main {
 
         switch (modeSelection) {
             case Constants.MODE_CLIENT:
-//                new Client();
                 break;
             case Constants.MODE_AUTH:
                 new AuthServer();
