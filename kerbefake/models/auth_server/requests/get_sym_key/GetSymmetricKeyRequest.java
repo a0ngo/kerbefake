@@ -71,7 +71,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
 
 
         // First is client id (16 bytes) then enc key, and ticket with their respective sizes
-        return new GetSymmetricKeyResponse(header.toResponseHeader(MessageCode.REQUEST_SYMMETRIC_KEY_SUCCESS, EncryptedKey.SIZE + Ticket.SIZE + 16), new GetSymmetricKeyResponseBody(header.getClientID(), key, ticket));
+        return new GetSymmetricKeyResponse(header.toResponseHeader(MessageCode.REQUEST_SYMMETRIC_KEY_SUCCESS, key.toLEByteArray().length + ticket.toLEByteArray().length + 16), new GetSymmetricKeyResponseBody(header.getClientID(), key, ticket));
 
     }
 }
