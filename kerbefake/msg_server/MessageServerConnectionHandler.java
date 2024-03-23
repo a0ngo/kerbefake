@@ -81,5 +81,12 @@ public class MessageServerConnectionHandler implements Runnable {
                 }
             }
         }
+
+        try {
+            conn.close();
+        } catch (IOException e) {
+            error("Failed to close socket due to: %s", e);
+            throw new RuntimeException(e);
+        }
     }
 }

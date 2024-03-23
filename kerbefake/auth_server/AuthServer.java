@@ -67,6 +67,12 @@ public class AuthServer {
         }
 
         connCleanupTimer.cancel();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            error("Failed to close socket due to: %s", e);
+            throw new RuntimeException(e);
+        }
     }
 
 

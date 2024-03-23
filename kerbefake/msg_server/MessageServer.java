@@ -82,6 +82,14 @@ public class MessageServer {
 
             new Thread(new MessageServerConnectionHandler(incoming, Thread.currentThread(), this.key)).start();
         }
+
+        try {
+            socket.close();
+        } catch (IOException e) {
+            error("Failed to close socket due to: %s", e);
+            throw new RuntimeException(e);
+        }
+
     }
 
 }

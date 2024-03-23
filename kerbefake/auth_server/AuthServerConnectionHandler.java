@@ -95,10 +95,10 @@ public class AuthServerConnectionHandler implements Runnable {
         }
 
         try {
-            this.conn.close();
+            conn.close();
         } catch (IOException e) {
-            e.printStackTrace();
             error("Failed to close socket due to: %s", e);
+            throw new RuntimeException(e);
         }
     }
 
