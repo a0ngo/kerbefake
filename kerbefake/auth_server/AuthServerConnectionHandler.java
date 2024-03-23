@@ -69,6 +69,7 @@ public class AuthServerConnectionHandler implements Runnable {
                 error("Failed to parse message due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
+                    out.flush();
                     break;
                 } catch (IOException ex) {
                     error("Failed to write failure response: %s", e);
@@ -84,6 +85,7 @@ public class AuthServerConnectionHandler implements Runnable {
                 error("Failed to send response due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
+                    out.flush();
                 } catch (IOException ex) {
                     e.printStackTrace();
                     // Hopefully this will be fixed later one.

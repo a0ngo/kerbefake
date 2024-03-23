@@ -13,6 +13,7 @@ import java.nio.ByteOrder;
 import java.security.SecureRandom;
 
 import static kerbefake.Logger.error;
+import static kerbefake.Logger.info;
 
 public class GetSymmetricKeyRequest extends ServerMessage implements ServerRequest {
     public GetSymmetricKeyRequest(ServerMessageHeader header, GetSymmetricKeyRequestBody body) {
@@ -54,6 +55,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
 
         long time = System.currentTimeMillis();
         long expTime = time + 10 * 60 * 1000; // 10 minutes
+        info("Exp time: %d", expTime);
 
         byte[] creationTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(time).array();
         byte[] expTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(expTime).array();

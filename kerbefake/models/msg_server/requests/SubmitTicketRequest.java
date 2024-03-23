@@ -3,13 +3,14 @@ package kerbefake.models.msg_server.requests;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.msg_server.responses.SubmitTicketResponse;
+import kerbefake.models.EmptyResponse;
 import kerbefake.msg_server.KnownSessions;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static kerbefake.Logger.error;
+import static kerbefake.Logger.info;
 
 public class SubmitTicketRequest extends EncryptedServerMessage implements ServerRequest {
 
@@ -37,13 +38,13 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         }
 
         long expTime = ByteBuffer.wrap(ticket.getExpTime()).order(ByteOrder.LITTLE_ENDIAN).getLong();
+        info("Ticket expired, current time: %d, exp time: %d", System.currentTimeMillis(), expTime);
         if (System.currentTimeMillis() >= expTime) {
-            error("Ticket expired.");
             return failedResponse;
         }
 
         sessions.addSession(header.getClientID(), ticket);
-        return new SubmitTicketResponse(this.header.toResponseHeader(MessageCode.SUBMIT_TICKET_SUCCESS, 0));
+        return new EmptyResponse(this.header.toResponseHeader(MessageCode.SUBMIT_TICKET_SUCCESS, 0));
     }
 
     @Override

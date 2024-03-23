@@ -34,7 +34,7 @@ public class SubmitTicketRequestBody extends ServerMessageBody {
         // 16 + 48 which is the next multiple of the decrypted size after padding.
         this.authenticator = new Authenticator().parse(byteArrayToLEByteBuffer(bodyBytes, 0, 16 + Authenticator.DATA_ENCRYPTED_SIZE).array());
         // 41 byte (1 version, 16 client ID, 16 server ID, 8 creation time) metadata + 16 byte ticket Iv + 48 byte encrypted data
-        this.ticket = new Ticket().parse(byteArrayToLEByteBuffer(bodyBytes, 16 + Authenticator.DATA_ENCRYPTED_SIZE, 41 + 16 + Ticket.DATA_ENCRYPTED_SIZE).array());
+        this.ticket = new Ticket().parse(byteArrayToLEByteBuffer(bodyBytes, 16 + 48, 41 + 16 + Ticket.DATA_ENCRYPTED_SIZE).array());
 
         return this;
     }

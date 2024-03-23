@@ -45,7 +45,7 @@ public final class Constants {
 
         public static final short SUBMIT_TICKET = 1028;
 
-        public static final short SUBMIT_MESSAGE = 1029;
+        public static final short SEND_MESSAGE = 1029;
     }
 
 
@@ -58,7 +58,7 @@ public final class Constants {
 
         public static final short SUBMIT_TICKET_SUCCESS = 1604;
 
-        public static final short SUBMIT_MESSAGE_SUCCESS = 1605;
+        public static final short SEND_MESSAGE_SUCCESS = 1605;
 
         public static final short UNKNOWN_FAILURE_CODE = 1609;
     }

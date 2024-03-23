@@ -99,8 +99,11 @@ public class Authenticator extends EncryptedServerMessageBody {
             throw new RuntimeException("IV is missing or is 0.");
         }
         try {
-            byte[] decryptedData = new byte[DATA_DECRYPTED_SIZE];
-            System.arraycopy(Utils.decrypt(key, this.iv, this.encryptedData), 0, decryptedData, 0, DATA_DECRYPTED_SIZE);
+            byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
+            if (decryptedData.length != DATA_DECRYPTED_SIZE) {
+                error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
+                return false;
+            }
             this.version = decryptedData[0];
             this.clientIdBytes = new byte[16];
             this.serverIdBytes = new byte[16];

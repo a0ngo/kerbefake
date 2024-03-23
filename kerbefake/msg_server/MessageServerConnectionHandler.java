@@ -72,6 +72,7 @@ public class MessageServerConnectionHandler implements Runnable {
                 error("Failed to parse message due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
+                    out.flush();
                     break;
                 } catch (IOException ex) {
                     error("Failed to write failure response: %s", e);

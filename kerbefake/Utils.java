@@ -141,6 +141,14 @@ public final class Utils {
      */
     public static byte[] decrypt(byte[] key, byte[] iv, byte[] valueToDecrypt) {
         return performCryptoOp(key, iv, valueToDecrypt, false);
+//        byte[] decrypted = performCryptoOp(key, iv, valueToDecrypt, false);
+
+        // Remove padding
+//        if()
+//        int bytesToRemove = decrypted[decrypted.length - 1] == 0 ? 16 : decrypted[decrypted.length - 1];
+//        byte[] decryptedNoPadding = new byte[decrypted.length - bytesToRemove];
+//        System.arraycopy(decrypted, 0, decryptedNoPadding, 0, decryptedNoPadding.length);
+//        return decryptedNoPadding;
     }
 
     /**
@@ -156,7 +164,7 @@ public final class Utils {
         SecretKey secret = new SecretKeySpec(key, "AES");
         Cipher cipher;
         try {
-            cipher = Cipher.getInstance(value.length % 16 == 0 ? "AES/CBC/NoPadding" : "AES/CBC/PKCS5Padding");
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(enc ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
             return cipher.doFinal(value);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |

@@ -10,9 +10,11 @@ import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyRespons
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
+import kerbefake.models.msg_server.requests.SendMessageRequest;
+import kerbefake.models.msg_server.requests.SendMessageRequestBody;
 import kerbefake.models.msg_server.requests.SubmitTicketRequest;
 import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
-import kerbefake.models.msg_server.responses.SubmitTicketResponse;
+import kerbefake.models.EmptyResponse;
 
 import java.io.*;
 import java.net.Socket;
@@ -68,6 +70,8 @@ public final class Tests {
         info("TEST - Session key is: %s", bytesToHexString(encryptedKey.getAesKey()));
 
         submitTicketToMsgServer(msgServerOutputStream, msgServerInputStream, ticket, clientId, encryptedKey);
+
+        sendMessageToMsgServer(msgServerOutputStream, msgServerInputStream, encryptedKey, clientId);
 
         endTest(msgServerSocket, authServerThreadHandle, msgServerThreadHandle);
     }
@@ -153,9 +157,8 @@ public final class Tests {
      * @param ticket   - the ticket to send
      * @param clientId - our client ID
      * @param key      - the key which holds our session key
-     * @return a {@link SubmitTicketResponse} if successful, null otherwise
      */
-    private static SubmitTicketResponse submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException {
+    private static void submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException {
         byte[] iv = new byte[16];
         SecureRandom srand = new SecureRandom();
         srand.nextBytes(iv);
@@ -175,15 +178,34 @@ public final class Tests {
         out.write(request.toLEByteArray());
         try {
             ServerMessage response = ServerMessage.parse(in, true);
-            SubmitTicketResponse resp = (SubmitTicketResponse) response;
+            EmptyResponse resp = (EmptyResponse) response;
             info("TEST - Got submit ticket response.");
-            return resp;
         } catch (InvalidMessageException e) {
             e.printStackTrace();
             error("Failed to parse response due to: %s", e);
         }
 
-        return null;
+    }
+
+    private static void sendMessageToMsgServer(OutputStream out, InputStream in, EncryptedKey key, String clientId) throws IOException {
+        byte[] iv = new byte[16];
+        SecureRandom srand = new SecureRandom();
+        srand.nextBytes(iv);
+        String message = "Hello this is some random message very long hahahah 1231 123 123 40n3 to wef";
+
+        SendMessageRequestBody body = new SendMessageRequestBody(iv, message);
+        body.encrypt(key.getAesKey());
+        SendMessageRequest request = new SendMessageRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SEND_MESSAGE, body.toLEByteArray().length), body);
+
+        out.write(request.toLEByteArray());
+        try {
+            ServerMessage response = ServerMessage.parse(in, true);
+            EmptyResponse resp = (EmptyResponse) response;
+            info("TEST - Got send message response.");
+        } catch (InvalidMessageException e) {
+            e.printStackTrace();
+            error("Failed to parse response due to: %s", e);
+        }
 
     }
 
