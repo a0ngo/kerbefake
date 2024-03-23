@@ -1,13 +1,16 @@
-package kerbefake.models.auth_server;
+package kerbefake.auth_server;
 
 import kerbefake.Constants;
 import kerbefake.errors.InvalidClientDataException;
 import kerbefake.errors.InvalidMessageServerDataException;
+import kerbefake.models.auth_server.ClientEntry;
+import kerbefake.models.auth_server.MessageServerEntry;
 
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static kerbefake.Constants.CLIENTS_FILE_NAME;
 import static kerbefake.Logger.*;
 
 public final class KnownPeers {
@@ -22,7 +25,14 @@ public final class KnownPeers {
         clients = Collections.synchronizedMap(new HashMap<>());
         servers = Collections.synchronizedMap(new HashMap<>());
         readAllClients();
-        flushClientsFile();
+        if(clients.size() == 0){
+            try {
+                new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, false)).close();
+            } catch (IOException e) {
+                error("Couldn't reset client file.");
+                throw new RuntimeException(e);
+            }
+        }
         readMsgServerData();
         instance = this;
     }
@@ -45,7 +55,7 @@ public final class KnownPeers {
     private void readAllClients() {
         BufferedReader clientReader;
         try {
-            clientReader = new BufferedReader(new FileReader(Constants.CLIENTS_FILE_NAME));
+            clientReader = new BufferedReader(new FileReader(CLIENTS_FILE_NAME));
         } catch (FileNotFoundException e) {
             info("No clients file found.");
             return;
@@ -117,7 +127,7 @@ public final class KnownPeers {
         debug("Flushing known clients to file");
         BufferedWriter writer;
         try {
-            writer = new BufferedWriter(new FileWriter(Constants.CLIENTS_FILE_NAME, false));
+            writer = new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, false));
         } catch (IOException e) {
             error("Failed to open file to write clients due to: %s", e);
             return;
@@ -130,6 +140,11 @@ public final class KnownPeers {
                     error("Failed to write client to file due to: %s", e);
                 }
             });
+            try {
+                writer.flush();
+            } catch (IOException e) {
+                error("Failed to flush client file");
+            }
         }
     }
 
@@ -152,7 +167,7 @@ public final class KnownPeers {
 
         BufferedWriter writer;
         try {
-            writer = new BufferedWriter(new FileWriter(Constants.CLIENTS_FILE_NAME, true));
+            writer = new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, true));
         } catch (IOException e) {
             error("Failed to open file to write clients due to: %s", e);
             return false;

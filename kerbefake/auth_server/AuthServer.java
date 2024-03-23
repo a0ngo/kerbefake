@@ -1,7 +1,5 @@
 package kerbefake.auth_server;
 
-import kerbefake.models.auth_server.KnownPeers;
-
 import javax.net.ServerSocketFactory;
 import java.io.*;
 import java.net.*;

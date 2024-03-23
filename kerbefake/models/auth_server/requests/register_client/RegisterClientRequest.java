@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.requests.register_client;
 
+import kerbefake.auth_server.KnownPeers;
 import kerbefake.errors.InvalidClientDataException;
 import kerbefake.models.MessageCode;
 import kerbefake.models.ServerMessage;
