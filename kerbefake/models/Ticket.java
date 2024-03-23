@@ -11,6 +11,10 @@ import static kerbefake.Utils.*;
 
 public class Ticket extends EncryptedServerMessageBody {
 
+    public static final int DATA_ENCRYPTED_SIZE = 48;
+
+    public static final int DATA_DECRYPTED_SIZE = 40;
+
     private byte version;
     private String clientId;
 
@@ -72,18 +76,17 @@ public class Ticket extends EncryptedServerMessageBody {
             return false;
         }
         try {
-            if (this.encryptedData == null || this.encryptedData.length < 48) {
+            if (!assertNonZeroedByteArrayOfLengthN(this.encryptedData, DATA_ENCRYPTED_SIZE)) {
                 throw new RuntimeException("No encrypted data or data is of invalid size.");
             }
 
-            byte[] decryptedData = Utils.decrypt(key, this.ticketIv, this.encryptedData);
-            if (decryptedData.length != 40) // 32 key + 8 exp time
-                throw new InvalidMessageException(String.format("Decrypted data is not of proper length (40, got %d)", decryptedData.length));
+            byte[] decryptedData = new byte[40];
+            System.arraycopy(Utils.decrypt(key, this.ticketIv, this.encryptedData), 0, decryptedData, 0, DATA_DECRYPTED_SIZE);
             this.aesKey = new byte[32];
             this.expTime = new byte[8];
 
             System.arraycopy(decryptedData, 0, aesKey, 0, 32);
-            System.arraycopy(decryptedData, 0, expTime, 32, 8);
+            System.arraycopy(decryptedData, 32, expTime, 0, 8);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -105,7 +108,7 @@ public class Ticket extends EncryptedServerMessageBody {
             return false;
         }
         try {
-            byte[] dataToEncrypt = new byte[this.expTime.length + this.aesKey.length];
+            byte[] dataToEncrypt = new byte[DATA_DECRYPTED_SIZE];
             System.arraycopy(aesKey, 0, dataToEncrypt, 0, 32);
             System.arraycopy(expTime, 0, dataToEncrypt, 32, 8);
 
@@ -179,12 +182,17 @@ public class Ticket extends EncryptedServerMessageBody {
         return byteArrayToLEByteBuffer(byteArr).array();
 
     }
-
+//00586be3cb412d4a04bde854325c96733d21da1d0e32944e64944c6f864aa6b7b43fb6676c8e0100006513fee618908800f1bdeb1e222a52b2ef4bd03d8358e053c8bf539a1e1547d32cab1801d27710278a8870fb5b408dd257694d8186df7395168b72121081888b
+//00586be3cb412d4a04bde854325c96733d21da1d0e32944e64944c6f864aa6b7b43fb6676c8e0100006513fee618908800f1bdeb1e222a52b2ef4bd03d8358e053c8bf539a1e1547d32cab1801d27710278a8870fb5b408dd257694d8186df7395168b72121081888b
     public boolean isEncrypted() {
         return !assertNonZeroedByteArrayOfLengthN(this.aesKey, 32) || !assertNonZeroedByteArrayOfLengthN(this.expTime, 8);
     }
 
     public byte[] getExpTime() {
         return expTime;
+    }
+
+    public byte[] getCreationTime() {
+        return creationTime;
     }
 }

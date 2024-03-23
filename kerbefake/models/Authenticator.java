@@ -2,14 +2,18 @@ package kerbefake.models;
 
 import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.EncryptedServerMessageBody;
-import kerbefake.models.ServerMessageBody;
 
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.Utils.byteArrayToLEByteBuffer;
 
 public class Authenticator extends EncryptedServerMessageBody {
+
+    // Data to encrypt is 41 bytes -> 48 bytes with padding.
+    public static final int DATA_ENCRYPTED_SIZE = 48;
+
+    // 1 - version + 16 - server ID + 16 - client ID + 8 creation time.
+    public static final int DATA_DECRYPTED_SIZE = 41;
 
     private byte[] iv;
 
@@ -21,23 +25,36 @@ public class Authenticator extends EncryptedServerMessageBody {
 
     private byte[] creationTime;
 
+    public Authenticator() {
+    }
+
+    public Authenticator(byte[] iv, byte[] clientIdBytes, byte[] serverIdBytes, byte[] creationTime) {
+        this.version = 24;
+        this.iv = iv;
+        this.clientIdBytes = clientIdBytes;
+        this.serverIdBytes = serverIdBytes;
+        this.creationTime = creationTime;
+    }
+
     @Override
     public Authenticator parse(byte[] bodyBytes) throws Exception {
-        if (bodyBytes.length < 48) {
-            throw new InvalidMessageException(String.format("Message length is not sufficient (%d but should be at least 48).", bodyBytes.length));
+        if (bodyBytes.length != 16 + DATA_ENCRYPTED_SIZE) {
+            throw new InvalidMessageException(String.format("Message length is not sufficient (%d but should be %d when encrypted).", DATA_ENCRYPTED_SIZE, bodyBytes.length));
         }
+        this.iv = new byte[16];
         System.arraycopy(bodyBytes, 0, iv, 0, 16);
-
-    return null;
+        this.encryptedData = new byte[48];
+        System.arraycopy(bodyBytes, 16, this.encryptedData, 0, 48);
+        return this;
     }
 
     @Override
     public byte[] toLEByteArray() {
-        if(this.iv == null || this.iv.length != 16){
+        if (this.iv == null || this.iv.length != 16) {
             throw new RuntimeException("IV is missing or is of invalid length");
         }
 
-        if(this.encryptedData == null || this.encryptedData.length < 64) {
+        if (!assertNonZeroedByteArrayOfLengthN(this.encryptedData, DATA_ENCRYPTED_SIZE)) {
             throw new RuntimeException("Encrypted data is missing or is of invalid length");
         }
 
@@ -50,13 +67,12 @@ public class Authenticator extends EncryptedServerMessageBody {
 
     @Override
     public boolean encrypt(byte[] key) {
-        if(!assertNonZeroedByteArrayOfLengthN(this.iv, 16)){
+        if (!assertNonZeroedByteArrayOfLengthN(this.iv, 16)) {
             throw new RuntimeException("IV is not initialized or is 0");
         }
 
-        try{
-            // 1 - version + 16 - server ID + 16 - client ID + 8 creation time/
-            byte[] dataToEncrypt = new byte[1 + 16 + 16 + 8];
+        try {
+            byte[] dataToEncrypt = new byte[DATA_DECRYPTED_SIZE];
             dataToEncrypt[0] = this.version;
             int offset = 1;
             System.arraycopy(this.clientIdBytes, 0, dataToEncrypt, offset, this.clientIdBytes.length);
@@ -75,19 +91,16 @@ public class Authenticator extends EncryptedServerMessageBody {
 
     @Override
     public boolean decrypt(byte[] key) throws InvalidMessageException {
-        if(this.encryptedData == null || this.encryptedData.length < 64) {
+        if (!assertNonZeroedByteArrayOfLengthN(this.encryptedData, DATA_ENCRYPTED_SIZE)) {
             throw new RuntimeException("Encrypted data is missing or is of invalid length (at least 64 bytes");
         }
 
-        if(!assertNonZeroedByteArrayOfLengthN(this.iv, 16)){
+        if (!assertNonZeroedByteArrayOfLengthN(this.iv, 16)) {
             throw new RuntimeException("IV is missing or is 0.");
         }
-        try{
-            byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
-            if(decryptedData.length != 49){
-                throw new InvalidMessageException(String.format("Message length should be 49, got %d", decryptedData.length));
-            }
-
+        try {
+            byte[] decryptedData = new byte[DATA_DECRYPTED_SIZE];
+            System.arraycopy(Utils.decrypt(key, this.iv, this.encryptedData), 0, decryptedData, 0, DATA_DECRYPTED_SIZE);
             this.version = decryptedData[0];
             this.clientIdBytes = new byte[16];
             this.serverIdBytes = new byte[16];
@@ -100,7 +113,7 @@ public class Authenticator extends EncryptedServerMessageBody {
             System.arraycopy(decryptedData, offset, this.creationTime, 0, creationTime.length);
 
             return true;
-        } catch (RuntimeException e){
+        } catch (RuntimeException e) {
             error("Decryption failed due to: %s", e);
             return false;
         }
