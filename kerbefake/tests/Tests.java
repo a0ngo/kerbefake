@@ -10,6 +10,9 @@ import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyRespons
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
+import kerbefake.models.msg_server.requests.SubmitTicketRequest;
+import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
+import kerbefake.models.msg_server.responses.SubmitTicketResponse;
 
 import java.io.*;
 import java.net.Socket;
@@ -20,44 +23,53 @@ import java.security.SecureRandom;
 import static kerbefake.Logger.error;
 import static kerbefake.Logger.info;
 import static kerbefake.Utils.bytesToHexString;
+import static kerbefake.Utils.hexStringToByteArray;
 import static kerbefake.tests.TestUtils.*;
 
 /**
  * A test class for client registration request - {@link RegisterClientRequest}
  */
 public final class Tests {
-    public static final String password = "strongPassword123!";
 
+    public static final String PASSWORD = "strongPassword123!";
+
+    public static final String SERVER_ID = "21da1d0e32944e64944c6f864aa6b7b4";
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         info("TEST - Starting test for client registration request.");
-        Thread threadHandle = startAuthServer();
+        Thread authServerThreadHandle = startAuthServer();
+        Thread msgServerThreadHandle = startMessageServer();
 
         info("TEST - Start registering");
 
-        Socket socket = new Socket("127.0.0.1", 1256);
-        OutputStream out = socket.getOutputStream();
-        InputStream in = socket.getInputStream();
-        String clientId = registerClient(out, socket.getInputStream());
+        Socket authServerSocket = new Socket("127.0.0.1", 1256);
+        Socket msgServerSocket = new Socket("127.0.0.1", 1235);
+        OutputStream authServerOutputStream = authServerSocket.getOutputStream();
+        InputStream authServerInputStream = authServerSocket.getInputStream();
+        OutputStream msgServerOutputStream = msgServerSocket.getOutputStream();
+        InputStream msgServerInputStream = msgServerSocket.getInputStream();
+
+        String clientId = registerClient(authServerOutputStream, authServerInputStream);
         if (clientId == null) {
             error("TEST - Failed to register.");
-            endTest(socket, threadHandle);
+            endTest(authServerSocket, authServerThreadHandle, msgServerThreadHandle);
             return;
         }
 
-        GetSymmetricKeyResponse getSymKey = getSymKey(out, in, clientId);
-        if(getSymKey == null){
+        GetSymmetricKeyResponse getSymKey = getSymKey(authServerOutputStream, authServerInputStream, clientId);
+        if (getSymKey == null) {
             error("TEST - Failed to get symmetric key");
-            endTest(socket, threadHandle);
+            endTest(authServerSocket, authServerThreadHandle, msgServerThreadHandle);
             return;
         }
 
         EncryptedKey encryptedKey = getSessionKey(getSymKey, clientId);
         Ticket ticket = ((GetSymmetricKeyResponseBody) getSymKey.getBody()).getTicket();
-
         info("TEST - Session key is: %s", bytesToHexString(encryptedKey.getAesKey()));
 
-        endTest(socket, threadHandle);
+        submitTicketToMsgServer(msgServerOutputStream, msgServerInputStream, ticket, clientId, encryptedKey);
+
+        endTest(msgServerSocket, authServerThreadHandle, msgServerThreadHandle);
     }
 
     /**
@@ -93,7 +105,7 @@ public final class Tests {
         byte[] nonce = new byte[8];
         SecureRandom srand = new SecureRandom();
         srand.nextBytes(nonce);
-        GetSymmetricKeyRequestBody body = new GetSymmetricKeyRequestBody("21da1d0e32944e64944c6f864aa6b7b4", nonce);
+        GetSymmetricKeyRequestBody body = new GetSymmetricKeyRequestBody(SERVER_ID, nonce);
         ServerMessage message = new GetSymmetricKeyRequest(
                 new ServerMessageHeader(clientId, (byte) 4, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
                 body
@@ -112,6 +124,14 @@ public final class Tests {
         return null;
     }
 
+    /**
+     * Gets the session key from the GetSymmetricKeyResponse from the server.
+     *
+     * @param getSymKeyResp - the response from the server for a symmetric key
+     * @param clientId      - the client ID to confirm it's our request
+     * @return The {@link EncryptedKey} object after decryption
+     * @throws NoSuchAlgorithmException - won't happen, unless a computer doesn't have SHA-256 installed
+     */
     private static EncryptedKey getSessionKey(GetSymmetricKeyResponse getSymKeyResp, String clientId) throws NoSuchAlgorithmException {
         GetSymmetricKeyResponseBody getSymKeyBody = (GetSymmetricKeyResponseBody) getSymKeyResp.getBody();
         EncryptedKey encKey = getSymKeyBody.getEncKey();
@@ -119,22 +139,65 @@ public final class Tests {
         assert clientId.equals(getSymKeyBody.getClientId());
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] key = digest.digest(password.getBytes());
+        byte[] key = digest.digest(PASSWORD.getBytes());
 
         encKey.decrypt(key);
         return encKey;
     }
 
     /**
+     * Submits a ticket to the message server and confirms it was received.
+     *
+     * @param out      - the output stream to use to write the request
+     * @param in       - the input stream to use to read the response
+     * @param ticket   - the ticket to send
+     * @param clientId - our client ID
+     * @param key      - the key which holds our session key
+     * @return a {@link SubmitTicketResponse} if successful, null otherwise
+     */
+    private static SubmitTicketResponse submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException {
+        byte[] iv = new byte[16];
+        SecureRandom srand = new SecureRandom();
+        srand.nextBytes(iv);
+
+        Authenticator authenticator = new Authenticator(
+                iv,
+                hexStringToByteArray(clientId),
+                hexStringToByteArray(SERVER_ID),
+                ticket.getCreationTime()
+        );
+
+        authenticator.encrypt(key.getAesKey());
+
+        SubmitTicketRequestBody body = new SubmitTicketRequestBody(authenticator, ticket);
+        SubmitTicketRequest request = new SubmitTicketRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SUBMIT_TICKET, body.toLEByteArray().length), body);
+
+        out.write(request.toLEByteArray());
+        try {
+            ServerMessage response = ServerMessage.parse(in, true);
+            SubmitTicketResponse resp = (SubmitTicketResponse) response;
+            info("TEST - Got submit ticket response.");
+            return resp;
+        } catch (InvalidMessageException e) {
+            e.printStackTrace();
+            error("Failed to parse response due to: %s", e);
+        }
+
+        return null;
+
+    }
+
+    /**
      * Ends the testing
      *
-     * @param socket       - the socket to close
-     * @param threadHandle - the thread running the auth server
+     * @param socket        - the socket to close
+     * @param threadHandles - the thread running the auth server
      * @throws IOException - in case of failure to interrupt the auth server or failure to close the socket
      */
-    private static void endTest(Socket socket, Thread threadHandle) throws IOException {
+    private static void endTest(Socket socket, Thread... threadHandles) throws IOException {
         socket.close();
-        threadHandle.interrupt();
+        for (Thread t : threadHandles)
+            t.interrupt();
     }
 
 }
