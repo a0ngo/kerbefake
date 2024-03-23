@@ -55,9 +55,11 @@ public abstract class ServerMessageBody {
             }
 
         } catch (IOException | InvocationTargetException e) {
+            e.printStackTrace();
             error("Failed to read request body from input stream due to: %s", e);
             return null;
         } catch (Exception e) {
+            e.printStackTrace();
             error("%s", e);
             return null;
         }
