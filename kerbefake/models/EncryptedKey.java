@@ -7,19 +7,13 @@ import static kerbefake.Logger.error;
 import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.Utils.byteArrayToLEByteBuffer;
 
-public class EncryptedKey implements MessageField {
-
-    public static final int SIZE = 64;
+public class EncryptedKey extends EncryptedServerMessageBody {
 
     private byte[] iv;
 
     private byte[] nonce;
 
-    private byte[] encNonce;
-
     private byte[] aesKey;
-
-    private byte[] encAesKey;
 
     public EncryptedKey() {
     }
@@ -39,28 +33,16 @@ public class EncryptedKey implements MessageField {
         return this;
     }
 
-    private EncryptedKey setEncNonce(byte[] encNonce) {
-        this.encNonce = encNonce;
-        return this;
-    }
-
-    private EncryptedKey setEncAesKey(byte[] encAesKey) {
-        this.encAesKey = encAesKey;
-        return this;
-    }
-
     @Override
     public boolean decrypt(byte[] key) {
         if (!assertNonZeroedByteArrayOfLengthN(this.iv, 16)) {
             return false;
         }
         try {
-            byte[] decNonce = Utils.decrypt(key, this.iv, this.encNonce);
+            byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
             this.nonce = new byte[8];
-            System.arraycopy(decNonce, 0, this.nonce, 0, 8);
-
-            setAesKey(Utils.decrypt(key, this.iv, this.encAesKey));
-
+            System.arraycopy(decryptedData, 0, this.nonce, 0, 8);
+            System.arraycopy(decryptedData, 8, this.aesKey, 0, 32);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -86,9 +68,11 @@ public class EncryptedKey implements MessageField {
 
         // TODO: Do we allow a zeroed AES? it might imply a lack of initialization
         try {
-            setEncNonce(Utils.encrypt(key, iv, this.nonce));
-            setEncAesKey(Utils.encrypt(key, iv, this.aesKey));
+            byte[] dataToEncrypt = new byte[40]; // Nonce + AES
+            System.arraycopy(nonce, 0, dataToEncrypt, 0, 8);
+            System.arraycopy(aesKey, 0, dataToEncrypt, 8, 32);
 
+            this.encryptedData = Utils.encrypt(key, this.iv, dataToEncrypt);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -96,36 +80,31 @@ public class EncryptedKey implements MessageField {
 
     }
 
-    public static EncryptedKey parse(byte[] bytes) throws InvalidMessageException {
-        /*
-        Parsing the encrypted key assumes that the fields aesKey and nonce are encrypted.
-        As a result their size is not the same as the size specified in the protocol since nonce is 8 bytes but
-        encrypted it'll be 16.
-         */
-        if (bytes.length != SIZE) {
-            throw new InvalidMessageException("Enc key byte size must be 56");
-        }
-
+    @Override
+    public EncryptedKey parse(byte[] bytes) throws InvalidMessageException {
+        // We do not perform size enforcement, we get the first 16 bytes as the IV and then decrypt the message and only then we set all the values.
         byte[] encKeyIv = byteArrayToLEByteBuffer(bytes, 0, 16).array();
-        byte[] nonce = byteArrayToLEByteBuffer(bytes, 16, 16).array();
-        byte[] aesKey = byteArrayToLEByteBuffer(bytes, 32, 32).array();
-
-        return new EncryptedKey().setEncAesKey(aesKey).setEncNonce(nonce).setIv(encKeyIv);
+        byte[] encryptedData = new byte[bytes.length - 16];
+        EncryptedKey encKey = new EncryptedKey().setAesKey(aesKey).setNonce(nonce).setIv(encKeyIv);
+        encKey.encryptedData = encryptedData;
+        return encKey;
     }
 
-
+    @Override
     public byte[] toLEByteArray() {
-        if (iv == null || iv.length != 16 || encNonce == null || encNonce.length != 16 || encAesKey == null || encAesKey.length != 32) {
+        if (iv == null || iv.length != 16) {
             throw new RuntimeException("Encrypted key structure is invalid and missing one or more value - make sure to run encrypt before converting to LE byte array.");
         }
 
-        byte[] byteArr = new byte[SIZE];
+        if (this.encryptedData == null || this.encryptedData.length < 48) {
+            throw new RuntimeException("Encrypted key must be encrypted before sending.");
+        }
 
-        System.arraycopy(iv, 0, byteArr, 0, 16);
-        System.arraycopy(encNonce, 0, byteArr, 16, 16);
-        System.arraycopy(encAesKey, 0, byteArr, 24, 32);
+        byte[] bytes = new byte[16 + this.encryptedData.length]; // 16 byte IV  + encrypted data
+        System.arraycopy(iv, 0, bytes, 0, 16);
+        System.arraycopy(this.encryptedData, 0, bytes, 16, this.encryptedData.length);
 
-        return byteArrayToLEByteBuffer(byteArr).array();
+        return byteArrayToLEByteBuffer(bytes).array();
     }
 
 }

@@ -16,7 +16,7 @@ import static kerbefake.Logger.error;
 /**
  * Generic class for any server message (request or response).
  */
-public abstract class ServerMessage  {
+public abstract class ServerMessage {
 
     protected ServerMessageHeader header;
 
@@ -28,6 +28,10 @@ public abstract class ServerMessage  {
         }
         this.header = header;
         this.body = body;
+    }
+
+    public ServerMessageHeader getHeader() {
+        return header;
     }
 
     public ServerMessageBody getBody() {

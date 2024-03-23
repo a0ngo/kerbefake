@@ -2,6 +2,7 @@ package kerbefake.models.auth_server.responses.get_sym_key;
 
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.EncryptedKey;
+import kerbefake.models.EncryptedServerMessageBody;
 import kerbefake.models.Ticket;
 import kerbefake.models.ServerMessageBody;
 
@@ -26,13 +27,13 @@ public class GetSymmetricKeyResponseBody extends ServerMessageBody {
 
     @Override
     public ServerMessageBody parse(byte[] bodyBytes) throws Exception {
-        if (bodyBytes.length != 185) {
-            throw new InvalidMessageException(String.format("Invalid payload size, expected 169, got %d", bodyBytes.length));
-        }
-
         this.clientId = bytesToHexString(byteArrayToLEByteBuffer(bodyBytes, 0, 16).array());
-        this.encKey = EncryptedKey.parse(byteArrayToLEByteBuffer(bodyBytes, 16, EncryptedKey.SIZE).array());
-        this.ticket = Ticket.parse(byteArrayToLEByteBuffer(bodyBytes, 16 + EncryptedKey.SIZE, Ticket.SIZE).array());
+
+        // 16 + 48 = 16 byte IV + 48 byte encrypted data.
+        this.encKey = new EncryptedKey().parse(byteArrayToLEByteBuffer(bodyBytes, 16, 16 + 48).array());
+
+        // 41 byte (1 version, 16 client ID, 16 server ID, 8 creation time) metadata + 16 byte ticket Iv + 48 byte encrypted data
+        this.ticket = new Ticket().parse(byteArrayToLEByteBuffer(bodyBytes, 16 + 16 + 48, 41 + 16 + 48).array());
 
         return this;
     }
@@ -60,5 +61,17 @@ public class GetSymmetricKeyResponseBody extends ServerMessageBody {
                 ", encKey=" + encKey +
                 ", ticket=" + ticket +
                 '}';
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public EncryptedKey getEncKey() {
+        return encKey;
+    }
+
+    public Ticket getTicket() {
+        return ticket;
     }
 }

@@ -9,9 +9,7 @@ import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.*;
 
-public class Ticket implements MessageField {
-
-    public static final int SIZE = 105;
+public class Ticket extends EncryptedServerMessageBody {
 
     private byte version;
     private String clientId;
@@ -24,11 +22,7 @@ public class Ticket implements MessageField {
 
     private byte[] aesKey;
 
-    private byte[] encAesKey;
-
     private byte[] expTime;
-
-    private byte[] encExpTime;
 
     public Ticket() {
     }
@@ -68,21 +62,28 @@ public class Ticket implements MessageField {
         return this;
     }
 
-    private Ticket setEncAesKey(byte[] encAesKey) {
-        this.encAesKey = encAesKey;
-        return this;
+    public byte[] getAesKey() {
+        return aesKey;
     }
 
-    private Ticket setEncExpTime(byte[] encExpTime) {
-        this.encExpTime = encExpTime;
-        return this;
-    }
-
-    public boolean decrypt(byte[] key) {
+    @Override
+    public boolean decrypt(byte[] key) throws InvalidMessageException {
         if (!assertNonZeroedByteArrayOfLengthN(this.ticketIv, 16)) {
             return false;
         }
         try {
+            if (this.encryptedData == null || this.encryptedData.length < 48) {
+                throw new RuntimeException("No encrypted data or data is of invalid size.");
+            }
+
+            byte[] decryptedData = Utils.decrypt(key, this.ticketIv, this.encryptedData);
+            if (decryptedData.length != 40) // 32 key + 8 exp time
+                throw new InvalidMessageException(String.format("Decrypted data is not of proper length (40, got %d)", decryptedData.length));
+            this.aesKey = new byte[32];
+            this.expTime = new byte[8];
+
+            System.arraycopy(decryptedData, 0, aesKey, 0, 32);
+            System.arraycopy(decryptedData, 0, expTime, 32, 8);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -103,11 +104,12 @@ public class Ticket implements MessageField {
             error("Expiration time is zeroed out");
             return false;
         }
-
-        // TODO: Do we allow a zeroed AES? it might imply a lack of initialization
         try {
-            setEncExpTime(Utils.encrypt(key, ticketIv, this.expTime));
-            setEncAesKey(Utils.encrypt(key, ticketIv, this.aesKey));
+            byte[] dataToEncrypt = new byte[this.expTime.length + this.aesKey.length];
+            System.arraycopy(aesKey, 0, dataToEncrypt, 0, 32);
+            System.arraycopy(expTime, 0, dataToEncrypt, 32, 8);
+
+            this.encryptedData = Utils.encrypt(key, this.ticketIv, dataToEncrypt);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -116,17 +118,9 @@ public class Ticket implements MessageField {
     }
 
 
-    public static Ticket parse(byte[] bytes) throws InvalidMessageException {
-        /*
-        Parsing the ticket assumes that the fields aesKey and expTime are encrypted.
-        As a result their size is not the same as the size specified in the protocol since expTime is 8 bytes but
-        encrypted it'll be 16.
-         */
-
-        if (bytes.length != SIZE) {
-            throw new InvalidMessageException("Ticket byte size must be 105");
-        }
-
+    @Override
+    public Ticket parse(byte[] bytes) throws InvalidMessageException {
+        // We do not enforce length before decryption
         int offset = 1;
         byte[] clientIdBytes = byteArrayToLEByteBuffer(bytes, offset, 16).array();
         offset += 16;
@@ -136,17 +130,16 @@ public class Ticket implements MessageField {
         offset += 8;
         byte[] ticketIv = byteArrayToLEByteBuffer(bytes, offset, 16).array();
         offset += 16;
-        byte[] aesKey = byteArrayToLEByteBuffer(bytes, offset, 32).array();
-        offset += 32;
-        byte[] expTime = byteArrayToLEByteBuffer(bytes, offset, 16).array();
+        byte[] encryptedTicket = byteArrayToLEByteBuffer(bytes, offset, bytes.length - offset).array();
 
-        return new Ticket().setVersion(bytes[0]).setClientId(new String(clientIdBytes, StandardCharsets.UTF_8))
-                .setServerId(new String(serverIdBytes, StandardCharsets.UTF_8))
+        Ticket ticket = new Ticket().setVersion(bytes[0]).setClientId(bytesToHexString(clientIdBytes))
+                .setServerId(bytesToHexString(serverIdBytes))
                 .setCreationTime(creationTime)
-                .setTicketIv(ticketIv)
-                .setEncAesKey(aesKey)
-                .setEncExpTime(expTime);
+                .setTicketIv(ticketIv);
+        ticket.encryptedData = encryptedTicket;
+        return ticket;
     }
+
 
     public byte[] toLEByteArray() {
         if (clientId == null || clientId.length() != ID_LENGTH) {
@@ -161,30 +154,37 @@ public class Ticket implements MessageField {
         if (ticketIv == null || ticketIv.length != 16) {
             throw new RuntimeException("Ticket IV is missing or invalid");
         }
-        if (encAesKey == null || encAesKey.length != 32) {
-            throw new RuntimeException("AES Key is missing or invalid - make sure to run encrypt before converting to LE Byte array");
-        }
-        if (encExpTime == null || encExpTime.length != 16) {
-            throw new RuntimeException("Expiration time is missing or invalid - make sure to run encrypt before converting to LE Byte array");
+
+        if (encryptedData == null || encryptedData.length < 48) { // 32 aes + 8 exp time at least 48 bytes encrypted
+            throw new RuntimeException("Object must be encrypted before sending");
         }
 
-        byte[] byteArr = new byte[SIZE];
+        byte[] clientIdBytes = hexStringToByteArray(clientId);
+        byte[] serverIdBytes = hexStringToByteArray(serverId);
+        int objectSize = clientIdBytes.length + serverIdBytes.length + 1 /*Version*/ + creationTime.length + 16 /*IV*/ + this.encryptedData.length;
+        byte[] byteArr = new byte[objectSize];
         byteArr[0] = version;
         int offset = 1;
 
-        System.arraycopy(hexStringToByteArray(clientId), 0, byteArr, offset, 16);
-        offset += 16;
-        System.arraycopy(hexStringToByteArray(serverId), 0, byteArr, offset, 16);
-        offset += 16;
+        System.arraycopy(clientIdBytes, 0, byteArr, offset, clientIdBytes.length);
+        offset += clientIdBytes.length;
+        System.arraycopy(serverIdBytes, 0, byteArr, offset, serverIdBytes.length);
+        offset += serverIdBytes.length;
         System.arraycopy(creationTime, 0, byteArr, offset, creationTime.length);
         offset += creationTime.length;
         System.arraycopy(ticketIv, 0, byteArr, offset, ticketIv.length);
         offset += ticketIv.length;
-        System.arraycopy(encAesKey, 0, byteArr, offset, encAesKey.length);
-        offset += encAesKey.length;
-        System.arraycopy(expTime, 0, byteArr, offset, expTime.length);
+        System.arraycopy(encryptedData, 0, byteArr, offset, encryptedData.length);
 
         return byteArrayToLEByteBuffer(byteArr).array();
 
+    }
+
+    public boolean isEncrypted() {
+        return !assertNonZeroedByteArrayOfLengthN(this.aesKey, 32) || !assertNonZeroedByteArrayOfLengthN(this.expTime, 8);
+    }
+
+    public byte[] getExpTime() {
+        return expTime;
     }
 }
