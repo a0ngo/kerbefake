@@ -11,6 +11,6 @@ public class FailureResponse extends ServerMessage {
 
     @Override
     public byte[] toLEByteArray() {
-        return new byte[0];
+        return header.toLEByteArray();
     }
 }
