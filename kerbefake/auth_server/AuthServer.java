@@ -29,7 +29,7 @@ public class AuthServer {
         ServerSocket socket;
         try {
             socket = ServerSocketFactory.getDefault().createServerSocket();
-            socket.bind(new InetSocketAddress("0.0.0.0", port));
+            socket.bind(new InetSocketAddress("127.0.0.1", port));
             socket.setSoTimeout(1000); // 1 second timeout
         } catch (IOException e) {
             error("Failed to create or bind socket to default port (%d), due to: %s", port, e);
