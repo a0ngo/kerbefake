@@ -1,19 +1,20 @@
 package kerbefake.tests;
 
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.ServerMessage;
-import kerbefake.models.ServerMessageHeader;
-import kerbefake.models.MessageCode;
+import kerbefake.models.*;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 import static kerbefake.Logger.error;
@@ -25,8 +26,10 @@ import static kerbefake.tests.TestUtils.*;
  * A test class for client registration request - {@link RegisterClientRequest}
  */
 public final class Tests {
+    public static final String password = "strongPassword123!";
 
-    public static void main(String[] args) throws IOException {
+
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         info("TEST - Starting test for client registration request.");
         Thread threadHandle = startAuthServer();
 
@@ -43,6 +46,16 @@ public final class Tests {
         }
 
         GetSymmetricKeyResponse getSymKey = getSymKey(out, in, clientId);
+        if(getSymKey == null){
+            error("TEST - Failed to get symmetric key");
+            endTest(socket, threadHandle);
+            return;
+        }
+
+        EncryptedKey encryptedKey = getSessionKey(getSymKey, clientId);
+        Ticket ticket = ((GetSymmetricKeyResponseBody) getSymKey.getBody()).getTicket();
+
+        info("TEST - Session key is: %s", bytesToHexString(encryptedKey.getAesKey()));
 
         endTest(socket, threadHandle);
     }
@@ -97,8 +110,19 @@ public final class Tests {
         }
 
         return null;
+    }
 
+    private static EncryptedKey getSessionKey(GetSymmetricKeyResponse getSymKeyResp, String clientId) throws NoSuchAlgorithmException {
+        GetSymmetricKeyResponseBody getSymKeyBody = (GetSymmetricKeyResponseBody) getSymKeyResp.getBody();
+        EncryptedKey encKey = getSymKeyBody.getEncKey();
 
+        assert clientId.equals(getSymKeyBody.getClientId());
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] key = digest.digest(password.getBytes());
+
+        encKey.decrypt(key);
+        return encKey;
     }
 
     /**

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 import static kerbefake.Logger.error;
+import static kerbefake.Utils.byteArrayToLEByteBuffer;
 
 public abstract class ServerMessageBody {
 
@@ -46,7 +47,7 @@ public abstract class ServerMessageBody {
             }
 
             try {
-                return header.getCode().getBodyClass().getConstructor().newInstance().parse(bodyBytes);
+                return header.getCode().getBodyClass().getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
             } catch (InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 error("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);

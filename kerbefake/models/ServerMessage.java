@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static kerbefake.Logger.error;
+import static kerbefake.Utils.byteArrayToLEByteBuffer;
 
 /**
  * Generic class for any server message (request or response).
@@ -113,7 +114,7 @@ public abstract class ServerMessage {
                 error("Failed to read header, expected 23 bytes but got %d", readBytes);
                 throw new InvalidMessageException(String.format("Failed to read header, expected 23 bytes but got %d", readBytes));
             }
-            return ServerMessageHeader.parseHeader(headerBytes);
+            return ServerMessageHeader.parseHeader(byteArrayToLEByteBuffer(headerBytes).array());
         } catch (IOException e) {
             error("Failed to read request header from input stream due to: %s", e);
             throw new InvalidMessageException(e.getMessage());

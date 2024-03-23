@@ -1,7 +1,9 @@
 package kerbefake.models.auth_server.requests.get_sym_key;
 
 import kerbefake.models.*;
-import kerbefake.models.auth_server.*;
+import kerbefake.models.auth_server.ClientEntry;
+import kerbefake.models.auth_server.KnownPeers;
+import kerbefake.models.auth_server.MessageServerEntry;
 import kerbefake.models.auth_server.responses.FailureResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;

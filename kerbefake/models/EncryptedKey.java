@@ -4,8 +4,7 @@ import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
 
 import static kerbefake.Logger.error;
-import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
-import static kerbefake.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.Utils.*;
 
 public class EncryptedKey extends EncryptedServerMessageBody {
 
@@ -41,6 +40,7 @@ public class EncryptedKey extends EncryptedServerMessageBody {
         try {
             byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
             this.nonce = new byte[8];
+            this.aesKey = new byte[32];
             System.arraycopy(decryptedData, 0, this.nonce, 0, 8);
             System.arraycopy(decryptedData, 8, this.aesKey, 0, 32);
             return true;
@@ -84,7 +84,7 @@ public class EncryptedKey extends EncryptedServerMessageBody {
     public EncryptedKey parse(byte[] bytes) throws InvalidMessageException {
         // We do not perform size enforcement, we get the first 16 bytes as the IV and then decrypt the message and only then we set all the values.
         byte[] encKeyIv = byteArrayToLEByteBuffer(bytes, 0, 16).array();
-        byte[] encryptedData = new byte[bytes.length - 16];
+        byte[] encryptedData = byteArrayToLEByteBuffer(bytes, 16, bytes.length - 16).array();
         EncryptedKey encKey = new EncryptedKey().setAesKey(aesKey).setNonce(nonce).setIv(encKeyIv);
         encKey.encryptedData = encryptedData;
         return encKey;
@@ -107,4 +107,11 @@ public class EncryptedKey extends EncryptedServerMessageBody {
         return byteArrayToLEByteBuffer(bytes).array();
     }
 
+    public byte[] getNonce() {
+        return nonce;
+    }
+
+    public byte[] getAesKey() {
+        return aesKey;
+    }
 }
