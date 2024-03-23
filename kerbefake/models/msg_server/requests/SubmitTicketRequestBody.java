@@ -12,6 +12,13 @@ public class SubmitTicketRequestBody extends ServerMessageBody {
 
     private Ticket ticket;
 
+    public SubmitTicketRequestBody() {
+    }
+
+    public SubmitTicketRequestBody(Authenticator authenticator, Ticket ticket) {
+        this.authenticator = authenticator;
+        this.ticket = ticket;
+    }
 
     public Authenticator getAuthenticator() {
         return authenticator;
@@ -24,10 +31,10 @@ public class SubmitTicketRequestBody extends ServerMessageBody {
     @Override
     public ServerMessageBody parse(byte[] bodyBytes) throws Exception {
 
-        // 16 + 64 which is the next multiple of the decrypted size after padding.
-        this.authenticator = new Authenticator().parse(byteArrayToLEByteBuffer(bodyBytes, 0, 16 + 64).array());
+        // 16 + 48 which is the next multiple of the decrypted size after padding.
+        this.authenticator = new Authenticator().parse(byteArrayToLEByteBuffer(bodyBytes, 0, 16 + Authenticator.DATA_ENCRYPTED_SIZE).array());
         // 41 byte (1 version, 16 client ID, 16 server ID, 8 creation time) metadata + 16 byte ticket Iv + 48 byte encrypted data
-        this.ticket = new Ticket().parse(byteArrayToLEByteBuffer(bodyBytes, 16 + 64, 41 + 16 + 48).array());
+        this.ticket = new Ticket().parse(byteArrayToLEByteBuffer(bodyBytes, 16 + Authenticator.DATA_ENCRYPTED_SIZE, 41 + 16 + Ticket.DATA_ENCRYPTED_SIZE).array());
 
         return this;
     }

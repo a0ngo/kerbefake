@@ -5,7 +5,7 @@ import kerbefake.models.ServerMessageBody;
 import kerbefake.models.ServerMessageHeader;
 
 public class SubmitTicketResponse extends ServerMessage {
-    public SubmitTicketResponse(ServerMessageHeader header, ServerMessageBody body) {
-        super(header, body);
+    public SubmitTicketResponse(ServerMessageHeader header) {
+        super(header, null);
     }
 }
