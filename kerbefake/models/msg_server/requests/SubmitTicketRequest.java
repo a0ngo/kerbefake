@@ -56,7 +56,9 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         if (!body.getTicket().encrypt(key)) {
             throw new RuntimeException("Unable to encrypt message");
         }
-        if (!body.getAuthenticator().encrypt(key)) {
+
+        byte[] sessionKey = body.getTicket().getAesKey();
+        if (!body.getAuthenticator().encrypt(sessionKey)) {
             throw new RuntimeException("Unable to encrypt message");
         }
     }
@@ -70,7 +72,9 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         if (!body.getTicket().decrypt(key)) {
             throw new RuntimeException("Unable to encrypt message");
         }
-        if (!body.getAuthenticator().decrypt(key)) {
+
+        byte[] sessionKey = body.getTicket().getAesKey();
+        if (!body.getAuthenticator().decrypt(sessionKey)) {
             throw new RuntimeException("Unable to encrypt message");
         }
     }
