@@ -1,5 +1,6 @@
 package kerbefake.msg_server;
 
+import kerbefake.errors.CryptographicException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.responses.FailureResponse;
@@ -66,7 +67,7 @@ public class MessageServerConnectionHandler implements Runnable {
 
                 out.write(response.toLEByteArray());
                 out.flush();
-            } catch (InvalidMessageException | IOException e) {
+            } catch (InvalidMessageException | CryptographicException | IOException e) {
                 // This is just an invalid message, or one we don't know how to handle - ignore and close connection.
                 e.printStackTrace();
                 error("Failed to parse message due to: %s", e);

@@ -1,5 +1,7 @@
 package kerbefake;
 
+import kerbefake.errors.CryptographicException;
+
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+
+import static kerbefake.Logger.error;
 
 /**
  * A bunch of useful utility functions
@@ -141,14 +145,6 @@ public final class Utils {
      */
     public static byte[] decrypt(byte[] key, byte[] iv, byte[] valueToDecrypt) {
         return performCryptoOp(key, iv, valueToDecrypt, false);
-//        byte[] decrypted = performCryptoOp(key, iv, valueToDecrypt, false);
-
-        // Remove padding
-//        if()
-//        int bytesToRemove = decrypted[decrypted.length - 1] == 0 ? 16 : decrypted[decrypted.length - 1];
-//        byte[] decryptedNoPadding = new byte[decrypted.length - bytesToRemove];
-//        System.arraycopy(decrypted, 0, decryptedNoPadding, 0, decryptedNoPadding.length);
-//        return decryptedNoPadding;
     }
 
     /**
@@ -169,8 +165,8 @@ public final class Utils {
             return cipher.doFinal(value);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
                  InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
-            // Shouldn't happen
-            throw new RuntimeException(e);
+            error("Failed to perform crypto operation, this can be because this PC does not support the needed ciphers (AES/CBC/PKCS5Padding) or that the wrong key was used for decryption");
+            throw new CryptographicException(e);
         }
     }
 
