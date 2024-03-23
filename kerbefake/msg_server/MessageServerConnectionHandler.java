@@ -44,6 +44,13 @@ public class MessageServerConnectionHandler implements Runnable {
         while (!this.parentThread.isInterrupted()) {
             try {
                 EncryptedServerMessage message = (EncryptedServerMessage) ServerMessage.parse(in);
+                if (message == null) {
+                    continue;
+                }
+                if (message.getHeader().getCode().isForAuthServer()) {
+                    out.write(unknownFailure.toLEByteArray());
+                    continue;
+                }
                 byte[] key = this.symKey;
                 if (!(message instanceof SubmitTicketRequest)) {
                     Ticket sessionTicket = KnownSessions.getInstance().getSession(message.getHeader().getClientID());
@@ -56,7 +63,9 @@ public class MessageServerConnectionHandler implements Runnable {
                 message.decrypt(key);
 
                 ServerMessage response = ((ServerRequest) message).execute();
+
                 out.write(response.toLEByteArray());
+                out.flush();
             } catch (InvalidMessageException | IOException e) {
                 // This is just an invalid message, or one we don't know how to handle - ignore and close connection.
                 e.printStackTrace();

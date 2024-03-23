@@ -41,13 +41,18 @@ public class AuthServerConnectionHandler implements Runnable {
             return;
         }
 
-        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
+        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte) 4, MessageCode.UNKNOWN_FAILURE, 0));
         while (!parentThread.isInterrupted()) {
             try {
                 ServerMessage message = ServerMessage.parse(in);
-                if(message == null){
+                if (message == null) {
                     continue;
                 }
+                if (!message.getHeader().getCode().isForAuthServer()) {
+                    out.write(unknownFailure.toLEByteArray());
+                    continue;
+                }
+
                 // On this specific class we always know that we expect messages that are requests, if there's an issue we simply close the connection;
                 // Because we do actually allow the parsing of a response message here.
                 // This is why we hvae a catch for classcastexception below.
@@ -75,7 +80,7 @@ public class AuthServerConnectionHandler implements Runnable {
                 error("Failed to send response due to: %s - terminating the connection", e);
                 break;
 
-            } catch (Exception e){
+            } catch (Exception e) {
                 error("Failed to send response due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
@@ -87,7 +92,7 @@ public class AuthServerConnectionHandler implements Runnable {
             }
         }
 
-        try{
+        try {
             this.conn.close();
         } catch (IOException e) {
             e.printStackTrace();
