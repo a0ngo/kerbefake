@@ -6,6 +6,7 @@ import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
+import kerbefake.models.auth_server.responses.FailureResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
@@ -31,11 +32,14 @@ import static kerbefake.tests.TestUtils.*;
 /**
  * A test class for client registration request - {@link RegisterClientRequest}
  */
+@SuppressWarnings({"unused", "DataFlowIssue"})
 public final class Tests {
 
     public static final String PASSWORD = "strongPassword123!";
 
     public static final String SERVER_ID = "21da1d0e32944e64944c6f864aa6b7b4";
+
+    public static final String CLIENT_ID = "d032ac04d7c04f3d83bba705ceee310f";
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         info("TEST - Starting test for client registration request.");
@@ -45,13 +49,13 @@ public final class Tests {
         info("TEST - Start registering");
 
         Socket authServerSocket = new Socket("127.0.0.1", 1256);
-        Socket msgServerSocket = new Socket("127.0.0.1", 1235);
         OutputStream authServerOutputStream = authServerSocket.getOutputStream();
         InputStream authServerInputStream = authServerSocket.getInputStream();
-        OutputStream msgServerOutputStream = msgServerSocket.getOutputStream();
-        InputStream msgServerInputStream = msgServerSocket.getInputStream();
 
-        String clientId = registerClient(authServerOutputStream, authServerInputStream);
+
+        //noinspection ConstantValue - intentional
+        String clientId = CLIENT_ID == null ? registerClient(authServerOutputStream, authServerInputStream) : CLIENT_ID;
+        //noinspection ConstantValue - intentional
         if (clientId == null) {
             error("TEST - Failed to register.");
             endTest(authServerSocket, authServerThreadHandle, msgServerThreadHandle);
@@ -64,6 +68,13 @@ public final class Tests {
             endTest(authServerSocket, authServerThreadHandle, msgServerThreadHandle);
             return;
         }
+
+        authServerSocket.close();
+
+        Socket msgServerSocket = new Socket("127.0.0.1", 1235);
+        OutputStream msgServerOutputStream = msgServerSocket.getOutputStream();
+        InputStream msgServerInputStream = msgServerSocket.getInputStream();
+
 
         EncryptedKey encryptedKey = getSessionKey(getSymKey, clientId);
         Ticket ticket = ((GetSymmetricKeyResponseBody) getSymKey.getBody()).getTicket();
@@ -92,20 +103,31 @@ public final class Tests {
         int payloadSize = name.length() + password.length();
         ServerMessage message = new RegisterClientRequest(new ServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
         out.write(message.toLEByteArray());
+        ServerMessage response = null;
         try {
-            ServerMessage response = ServerMessage.parse(in, true);
+            response = ServerMessage.parse(in, true);
             RegisterClientResponse registerRes = (RegisterClientResponse) response;
             info("TEST - Client id: " + registerRes.getBody().toString());
             return ((RegisterClientResponseBody) registerRes.getBody()).getId();
         } catch (InvalidMessageException e) {
             e.printStackTrace();
             error("Failed to parse response due to: %s", e);
+        } catch (ClassCastException e){
+            try {
+                FailureResponse failure = (FailureResponse) response;
+                error("TEST - Failed to perform operation");
+            }catch (ClassCastException e1){
+                e1.printStackTrace();
+                error("Failed to case response to expected, or unexpected response: %s",e1);
+            }
         }
+
 
         return null;
     }
 
     private static GetSymmetricKeyResponse getSymKey(OutputStream out, InputStream in, String clientId) throws IOException {
+        info("TEST - Trying to get symmetric key");
         byte[] nonce = new byte[8];
         SecureRandom srand = new SecureRandom();
         srand.nextBytes(nonce);
@@ -115,16 +137,24 @@ public final class Tests {
                 body
         );
         out.write(message.toLEByteArray());
+        ServerMessage response = null;
         try {
-            ServerMessage response = ServerMessage.parse(in, true);
+            response = ServerMessage.parse(in, true);
             GetSymmetricKeyResponse resp = (GetSymmetricKeyResponse) response;
             info("TEST - Get symmetric key response: " + resp.getBody().toString());
             return resp;
         } catch (InvalidMessageException e) {
             e.printStackTrace();
-            error("Failed to parse response due to: %s", e);
+            error("TEST - Failed to parse response due to: %s", e);
+        } catch (ClassCastException e){
+            try {
+                FailureResponse failure = (FailureResponse) response;
+                error("TEST - Failed to perform operation");
+            }catch (ClassCastException e1){
+                e1.printStackTrace();
+                error("Failed to case response to expected, or unexpected response: %s",e1);
+            }
         }
-
         return null;
     }
 
@@ -176,14 +206,24 @@ public final class Tests {
         SubmitTicketRequest request = new SubmitTicketRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SUBMIT_TICKET, body.toLEByteArray().length), body);
 
         out.write(request.toLEByteArray());
+        ServerMessage response = null;
         try {
-            ServerMessage response = ServerMessage.parse(in, true);
+            response = ServerMessage.parse(in, true);
             EmptyResponse resp = (EmptyResponse) response;
             info("TEST - Got submit ticket response.");
         } catch (InvalidMessageException e) {
             e.printStackTrace();
             error("Failed to parse response due to: %s", e);
+        } catch (ClassCastException e){
+            try {
+                FailureResponse failure = (FailureResponse) response;
+                error("TEST - Failed to perform operation");
+            }catch (ClassCastException e1){
+                e1.printStackTrace();
+                error("Failed to case response to expected, or unexpected response: %s",e1);
+            }
         }
+
 
     }
 
@@ -198,14 +238,24 @@ public final class Tests {
         SendMessageRequest request = new SendMessageRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SEND_MESSAGE, body.toLEByteArray().length), body);
 
         out.write(request.toLEByteArray());
+        ServerMessage response = null;
         try {
-            ServerMessage response = ServerMessage.parse(in, true);
+            response = ServerMessage.parse(in, true);
             EmptyResponse resp = (EmptyResponse) response;
             info("TEST - Got send message response.");
         } catch (InvalidMessageException e) {
             e.printStackTrace();
             error("Failed to parse response due to: %s", e);
+        } catch (ClassCastException e){
+            try {
+                FailureResponse failure = (FailureResponse) response;
+                error("TEST - Failed to perform operation");
+            }catch (ClassCastException e1){
+                e1.printStackTrace();
+                error("Failed to case response to expected, or unexpected response: %s",e1);
+            }
         }
+
 
     }
 
