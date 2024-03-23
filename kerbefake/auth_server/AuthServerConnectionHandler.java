@@ -1,10 +1,10 @@
-package kerbefake;
+package kerbefake.auth_server;
 
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.auth_server.AuthServerMessage;
-import kerbefake.models.auth_server.AuthServerMessageHeader;
-import kerbefake.models.auth_server.MessageCode;
-import kerbefake.models.auth_server.requests.AuthServerRequest;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
+import kerbefake.models.MessageCode;
+import kerbefake.models.ServerRequest;
 import kerbefake.models.auth_server.responses.FailureResponse;
 
 import java.io.BufferedInputStream;
@@ -41,18 +41,18 @@ public class AuthServerConnectionHandler implements Runnable {
             return;
         }
 
-        FailureResponse unknownFailure = new FailureResponse(new AuthServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
+        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte)4, MessageCode.UNKNOWN_FAILURE, 0));
         while (!parentThread.isInterrupted()) {
             try {
-                AuthServerMessage message = AuthServerMessage.parse(in);
+                ServerMessage message = ServerMessage.parse(in);
                 if(message == null){
                     continue;
                 }
                 // On this specific class we always know that we expect messages that are requests, if there's an issue we simply close the connection;
                 // Because we do actually allow the parsing of a response message here.
                 // This is why we hvae a catch for classcastexception below.
-                AuthServerRequest req = (AuthServerRequest) message;
-                AuthServerMessage res = req.execute();
+                ServerRequest req = (ServerRequest) message;
+                ServerMessage res = req.execute();
 
                 out.write(res.toLEByteArray());
                 out.flush();

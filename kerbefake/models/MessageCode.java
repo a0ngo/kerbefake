@@ -1,6 +1,7 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 import kerbefake.Constants;
+import kerbefake.auth_server.AuthServerConnectionHandler;
 import kerbefake.errors.InvalidMessageCodeException;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
@@ -58,21 +59,21 @@ public enum MessageCode {
 
     /**
      * The class of the message that is used for the given message.
-     * This is used when parsing the message from the input stream in {@link kerbefake.AuthServerConnectionHandler}
-     * or as part of a message parsing in {@link AuthServerMessage#parse(InputStream)}.
-     * The class must extend {@link AuthServerMessage} and thus have a constructor matching the signature:
-     * `{@link AuthServerMessageHeader}, {@link AuthServerMessageBody}`
+     * This is used when parsing the message from the input stream in {@link AuthServerConnectionHandler}
+     * or as part of a message parsing in {@link ServerMessage#parse(InputStream)}.
+     * The class must extend {@link ServerMessage} and thus have a constructor matching the signature:
+     * `{@link ServerMessageHeader}, {@link ServerMessageBody}`
      */
-    private final Class<? extends AuthServerMessage> messageClazz;
+    private final Class<? extends ServerMessage> messageClazz;
 
     /**
      * The class of the message's body. This class can be null, for example a failure response has no body, just the header.
-     * If this exists it must extend {@link AuthServerMessageBody} and implement an empty constructor with the {@link AuthServerMessageBody#parse(byte[])}
+     * If this exists it must extend {@link ServerMessageBody} and implement an empty constructor with the {@link ServerMessageBody#parse(byte[])}
      * method.
      */
-    private final Class<? extends AuthServerMessageBody> bodyClazz;
+    private final Class<? extends ServerMessageBody> bodyClazz;
 
-    MessageCode(short code, Class<? extends AuthServerMessage> messageClazz, Class<? extends AuthServerMessageBody> bodyClazz) {
+    MessageCode(short code, Class<? extends ServerMessage> messageClazz, Class<? extends ServerMessageBody> bodyClazz) {
         this.code = code;
         this.messageClazz = messageClazz;
         this.bodyClazz = bodyClazz;
@@ -92,11 +93,11 @@ public enum MessageCode {
         return this.code;
     }
 
-    public Class<? extends AuthServerMessage> getMessageClass() {
+    public Class<? extends ServerMessage> getMessageClass() {
         return messageClazz;
     }
 
-    public Class<? extends AuthServerMessageBody> getBodyClass() {
+    public Class<? extends ServerMessageBody> getBodyClass() {
         return bodyClazz;
     }
 

@@ -1,8 +1,11 @@
 package kerbefake.models.auth_server.requests.register_client;
 
 import kerbefake.errors.InvalidClientDataException;
+import kerbefake.models.MessageCode;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
 import kerbefake.models.auth_server.*;
-import kerbefake.models.auth_server.requests.AuthServerRequest;
+import kerbefake.models.ServerRequest;
 import kerbefake.models.auth_server.responses.FailureResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
@@ -15,17 +18,16 @@ import java.util.UUID;
 
 import static kerbefake.Logger.error;
 import static kerbefake.Logger.info;
-import static kerbefake.Utils.hexStrToStr;
 
-public class RegisterClientRequest extends AuthServerMessage implements AuthServerRequest {
+public class RegisterClientRequest extends ServerMessage implements ServerRequest {
 
 
-    public RegisterClientRequest(AuthServerMessageHeader header, RegisterClientRequestBody body) {
+    public RegisterClientRequest(ServerMessageHeader header, RegisterClientRequestBody body) {
         super(header, body);
     }
 
     @Override
-    public AuthServerMessage execute() {
+    public ServerMessage execute() {
         RegisterClientRequestBody body = (RegisterClientRequestBody) this.body;
         KnownPeers clients = KnownPeers.getInstance();
         MessageDigest digest;

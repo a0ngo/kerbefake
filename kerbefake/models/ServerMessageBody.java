@@ -1,4 +1,4 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.errors.InvalidMessageCodeException;
@@ -9,20 +9,20 @@ import java.lang.reflect.InvocationTargetException;
 
 import static kerbefake.Logger.error;
 
-public abstract class AuthServerMessageBody {
+public abstract class ServerMessageBody {
 
 
-    public AuthServerMessageBody() {
+    public ServerMessageBody() {
     }
 
     /**
      * Parses a specific message from a given array of LE bytes.
      *
      * @param bodyBytes - the body bytes that were read
-     * @return - a child of {@link AuthServerMessageBody}
+     * @return - a child of {@link ServerMessageBody}
      * @throws Exception - in case of a request parsing it might throw {@link InvalidMessageCodeException}, in case of response parsing it might throw {@link kerbefake.errors.InvalidResponseDataException}
      */
-    public abstract AuthServerMessageBody parse(byte[] bodyBytes) throws Exception;
+    public abstract ServerMessageBody parse(byte[] bodyBytes) throws Exception;
 
     /**
      * Converts this body to a LE byte array.
@@ -31,7 +31,7 @@ public abstract class AuthServerMessageBody {
      */
     public abstract byte[] toLEByteArray();
 
-    public static AuthServerMessageBody parse(AuthServerMessageHeader header, BufferedInputStream stream) throws InvalidMessageException {
+    public static ServerMessageBody parse(ServerMessageHeader header, BufferedInputStream stream) throws InvalidMessageException {
         int payloadSize = header.getPayloadSize();
         if (payloadSize == 0) {
             return null;

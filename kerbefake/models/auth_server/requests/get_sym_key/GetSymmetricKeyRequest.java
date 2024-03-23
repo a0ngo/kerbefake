@@ -1,9 +1,7 @@
 package kerbefake.models.auth_server.requests.get_sym_key;
 
-import kerbefake.models.EncryptedKey;
-import kerbefake.models.Ticket;
+import kerbefake.models.*;
 import kerbefake.models.auth_server.*;
-import kerbefake.models.auth_server.requests.AuthServerRequest;
 import kerbefake.models.auth_server.responses.FailureResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
@@ -14,13 +12,13 @@ import java.security.SecureRandom;
 
 import static kerbefake.Logger.error;
 
-public class GetSymmetricKeyRequest extends AuthServerMessage implements AuthServerRequest {
-    public GetSymmetricKeyRequest(AuthServerMessageHeader header, GetSymmetricKeyRequestBody body) {
+public class GetSymmetricKeyRequest extends ServerMessage implements ServerRequest {
+    public GetSymmetricKeyRequest(ServerMessageHeader header, GetSymmetricKeyRequestBody body) {
         super(header, body);
     }
 
     @Override
-    public AuthServerMessage execute() {
+    public ServerMessage execute() {
         FailureResponse failure = new FailureResponse(this.header.toResponseHeader(MessageCode.UNKNOWN_FAILURE, 0));
         KnownPeers peers = KnownPeers.getInstance();
         ClientEntry client;

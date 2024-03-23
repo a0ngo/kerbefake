@@ -1,11 +1,11 @@
 package kerbefake.models.auth_server.requests.register_client;
 
 import kerbefake.errors.InvalidMessageCodeException;
-import kerbefake.models.auth_server.AuthServerMessageBody;
+import kerbefake.models.ServerMessageBody;
 
 import static kerbefake.Utils.getNullTerminatedStringFromByteArray;
 
-public class RegisterClientRequestBody extends AuthServerMessageBody {
+public class RegisterClientRequestBody extends ServerMessageBody {
 
     private byte[] rawBody;
 
@@ -49,7 +49,7 @@ public class RegisterClientRequestBody extends AuthServerMessageBody {
     }
 
     @Override
-    public AuthServerMessageBody parse(byte[] bytes) throws InvalidMessageCodeException {
+    public ServerMessageBody parse(byte[] bytes) throws InvalidMessageCodeException {
         if (bytes == null || bytes.length > 255 * 2) {
             throw new InvalidMessageCodeException("Body Size");
         }

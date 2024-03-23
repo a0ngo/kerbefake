@@ -1,9 +1,9 @@
 package kerbefake.tests;
 
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.auth_server.AuthServerMessage;
-import kerbefake.models.auth_server.AuthServerMessageHeader;
-import kerbefake.models.auth_server.MessageCode;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
+import kerbefake.models.MessageCode;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
@@ -61,10 +61,10 @@ public final class Tests {
         String name = "Ron Person\0";
         String password = "strongPassword123!\0";
         int payloadSize = name.length() + password.length();
-        AuthServerMessage message = new RegisterClientRequest(new AuthServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
+        ServerMessage message = new RegisterClientRequest(new ServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
         out.write(message.toLEByteArray());
         try {
-            AuthServerMessage response = AuthServerMessage.parse(in, true);
+            ServerMessage response = ServerMessage.parse(in, true);
             RegisterClientResponse registerRes = (RegisterClientResponse) response;
             info("TEST - Client id: " + registerRes.getBody().toString());
             return ((RegisterClientResponseBody) registerRes.getBody()).getId();
@@ -81,13 +81,13 @@ public final class Tests {
         SecureRandom srand = new SecureRandom();
         srand.nextBytes(nonce);
         GetSymmetricKeyRequestBody body = new GetSymmetricKeyRequestBody("21da1d0e32944e64944c6f864aa6b7b4", nonce);
-        AuthServerMessage message = new GetSymmetricKeyRequest(
-                new AuthServerMessageHeader(clientId, (byte) 4, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
+        ServerMessage message = new GetSymmetricKeyRequest(
+                new ServerMessageHeader(clientId, (byte) 4, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
                 body
         );
         out.write(message.toLEByteArray());
         try {
-            AuthServerMessage response = AuthServerMessage.parse(in, true);
+            ServerMessage response = ServerMessage.parse(in, true);
             GetSymmetricKeyResponse resp = (GetSymmetricKeyResponse) response;
             info("TEST - Get symmetric key response: " + resp.getBody().toString());
             return resp;

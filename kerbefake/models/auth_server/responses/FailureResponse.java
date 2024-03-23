@@ -1,11 +1,11 @@
 package kerbefake.models.auth_server.responses;
 
-import kerbefake.models.auth_server.AuthServerMessage;
-import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
 
-public class FailureResponse extends AuthServerMessage {
+public class FailureResponse extends ServerMessage {
 
-    public FailureResponse(AuthServerMessageHeader header) {
+    public FailureResponse(ServerMessageHeader header) {
         super(header, null);
     }
 

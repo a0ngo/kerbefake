@@ -1,9 +1,7 @@
 package kerbefake.tests;
 
-import kerbefake.AuthServer;
+import kerbefake.auth_server.AuthServer;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Random;
 
 import static kerbefake.Logger.info;

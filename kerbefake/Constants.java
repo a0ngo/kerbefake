@@ -1,6 +1,6 @@
 package kerbefake;
 
-import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.ServerMessageHeader;
 
 public final class Constants {
 
@@ -15,7 +15,7 @@ public final class Constants {
     public static final int DEFAULT_PORT_AUTH_SERVER = 1256;
 
     /**
-     * The request header's size is constant, see {@link AuthServerMessageHeader}
+     * The request header's size is constant, see {@link ServerMessageHeader}
      */
     public static final int REQUEST_HEADER_SIZE = 23;
 

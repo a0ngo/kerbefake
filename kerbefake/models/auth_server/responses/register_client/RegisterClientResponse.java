@@ -1,11 +1,11 @@
 package kerbefake.models.auth_server.responses.register_client;
 
-import kerbefake.models.auth_server.AuthServerMessage;
-import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
 
-public class RegisterClientResponse extends AuthServerMessage {
+public class RegisterClientResponse extends ServerMessage {
 
-    public RegisterClientResponse(AuthServerMessageHeader header, RegisterClientResponseBody body) {
+    public RegisterClientResponse(ServerMessageHeader header, RegisterClientResponseBody body) {
         super(header, body);
     }
 

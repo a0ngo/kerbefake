@@ -1,4 +1,4 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 import kerbefake.Constants;
 import kerbefake.errors.InvalidMessageException;
@@ -7,7 +7,6 @@ import kerbefake.errors.InvalidMessageCodeException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -15,15 +14,15 @@ import java.nio.ByteOrder;
 import static kerbefake.Logger.error;
 
 /**
- * Generic class for auth server message (request or response).
+ * Generic class for any server message (request or response).
  */
-public abstract class AuthServerMessage {
+public abstract class ServerMessage  {
 
-    protected AuthServerMessageHeader header;
+    protected ServerMessageHeader header;
 
-    protected AuthServerMessageBody body;
+    protected ServerMessageBody body;
 
-    public AuthServerMessage(AuthServerMessageHeader header, AuthServerMessageBody body) {
+    public ServerMessage(ServerMessageHeader header, ServerMessageBody body) {
         if (header == null) {
             throw new RuntimeException("No header was provided");
         }
@@ -31,7 +30,7 @@ public abstract class AuthServerMessage {
         this.body = body;
     }
 
-    public AuthServerMessageBody getBody() {
+    public ServerMessageBody getBody() {
         return body;
     }
 
@@ -52,17 +51,17 @@ public abstract class AuthServerMessage {
     }
 
 
-    public static AuthServerMessage parse(InputStream stream) throws InvalidMessageException {
-        return AuthServerMessage.parse(stream, false);
+    public static ServerMessage parse(InputStream stream) throws InvalidMessageException {
+        return ServerMessage.parse(stream, false);
     }
 
-    public static AuthServerMessage parse(InputStream stream, boolean isResponse) throws InvalidMessageException {
+    public static ServerMessage parse(InputStream stream, boolean isResponse) throws InvalidMessageException {
         BufferedInputStream in = new BufferedInputStream(stream);
-        AuthServerMessageHeader header = AuthServerMessage.readHeader(in, isResponse);
+        ServerMessageHeader header = ServerMessage.readHeader(in, isResponse);
         if (header == null) {
             return null;
         }
-        AuthServerMessageBody body = AuthServerMessageBody.parse(header, in);
+        ServerMessageBody body = ServerMessageBody.parse(header, in);
 
         MessageCode messageCode = header.getCode();
 
@@ -72,13 +71,13 @@ public abstract class AuthServerMessage {
          * (AuthServerMessageHeader header, AuthServerMessageBody body).
          */
         try {
-            Class<? extends AuthServerMessage> messageClass = messageCode.getMessageClass();
-            Class<? extends AuthServerMessageBody> bodyClass = messageCode.getBodyClass();
+            Class<? extends ServerMessage> messageClass = messageCode.getMessageClass();
+            Class<? extends ServerMessageBody> bodyClass = messageCode.getBodyClass();
             if (bodyClass == null) {
-                return messageClass.getConstructor(AuthServerMessageHeader.class).newInstance(header);
+                return messageClass.getConstructor(ServerMessageHeader.class).newInstance(header);
             }
 
-            return messageClass.getConstructor(AuthServerMessageHeader.class, messageCode.getBodyClass())
+            return messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass())
                     .newInstance(header, messageCode.getBodyClass().cast(body));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
@@ -92,9 +91,9 @@ public abstract class AuthServerMessage {
      * Reads the header from the input stream.
      *
      * @param in - the input stream
-     * @return An {@link AuthServerMessageHeader} or null in case of an error.
+     * @return An {@link ServerMessageHeader} or null in case of an error.
      */
-    private static AuthServerMessageHeader readHeader(BufferedInputStream in, boolean isResponse) throws InvalidMessageException {
+    private static ServerMessageHeader readHeader(BufferedInputStream in, boolean isResponse) throws InvalidMessageException {
         try {
             byte[] headerBytes = new byte[isResponse ? Constants.RESPONSE_HEADER_SIZE : Constants.REQUEST_HEADER_SIZE];
             int readBytes = in.read(headerBytes);
@@ -110,7 +109,7 @@ public abstract class AuthServerMessage {
                 error("Failed to read header, expected 23 bytes but got %d", readBytes);
                 throw new InvalidMessageException(String.format("Failed to read header, expected 23 bytes but got %d", readBytes));
             }
-            return AuthServerMessageHeader.parseHeader(headerBytes);
+            return ServerMessageHeader.parseHeader(headerBytes);
         } catch (IOException e) {
             error("Failed to read request header from input stream due to: %s", e);
             throw new InvalidMessageException(e.getMessage());

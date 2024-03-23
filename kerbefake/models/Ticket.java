@@ -2,7 +2,6 @@ package kerbefake.models;
 
 import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.auth_server.MessageField;
 
 import java.nio.charset.StandardCharsets;
 

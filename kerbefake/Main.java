@@ -1,5 +1,8 @@
 package kerbefake;
 
+import kerbefake.auth_server.AuthServer;
+import kerbefake.msg_server.MessageServer;
+
 import java.util.Scanner;
 
 import static kerbefake.Logger.error;

@@ -2,7 +2,6 @@ package kerbefake.models;
 
 import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.auth_server.MessageField;
 
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;

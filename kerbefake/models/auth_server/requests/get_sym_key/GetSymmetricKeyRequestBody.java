@@ -1,12 +1,11 @@
 package kerbefake.models.auth_server.requests.get_sym_key;
 
-import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.auth_server.AuthServerMessageBody;
+import kerbefake.models.ServerMessageBody;
 
 import static kerbefake.Utils.*;
 
-public class GetSymmetricKeyRequestBody extends AuthServerMessageBody {
+public class GetSymmetricKeyRequestBody extends ServerMessageBody {
 
     private String serverId;
 
@@ -29,7 +28,7 @@ public class GetSymmetricKeyRequestBody extends AuthServerMessageBody {
     }
 
     @Override
-    public AuthServerMessageBody parse(byte[] bodyBytes) throws Exception {
+    public ServerMessageBody parse(byte[] bodyBytes) throws Exception {
         if (bodyBytes.length != 24) { // 16 byte server ID, 8 byte nonce
             throw new InvalidMessageException(String.format("Invalid size for body bytes, expected 24, got %d", bodyBytes.length));
         }

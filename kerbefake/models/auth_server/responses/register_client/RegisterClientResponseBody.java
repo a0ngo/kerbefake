@@ -1,16 +1,14 @@
 package kerbefake.models.auth_server.responses.register_client;
 
-import kerbefake.Utils;
 import kerbefake.errors.InvalidResponseDataException;
-import kerbefake.models.auth_server.AuthServerMessageBody;
+import kerbefake.models.ServerMessageBody;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 
 import static kerbefake.Utils.*;
 
-public class RegisterClientResponseBody extends AuthServerMessageBody {
+public class RegisterClientResponseBody extends ServerMessageBody {
 
     private String id;
 
@@ -26,7 +24,7 @@ public class RegisterClientResponseBody extends AuthServerMessageBody {
     }
 
     @Override
-    public AuthServerMessageBody parse(byte[] bodyBytes) throws Exception {
+    public ServerMessageBody parse(byte[] bodyBytes) throws Exception {
         if (bodyBytes.length != 16) {
             throw new InvalidResponseDataException("Id");
         }

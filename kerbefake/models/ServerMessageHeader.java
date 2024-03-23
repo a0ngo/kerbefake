@@ -1,4 +1,4 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 import kerbefake.Constants;
 import kerbefake.errors.InvalidMessageCodeException;
@@ -16,7 +16,7 @@ import static kerbefake.Utils.*;
  * Code - 2 bytes
  * Payload Size - 4 bytes
  */
-public class AuthServerMessageHeader implements Message {
+public class ServerMessageHeader implements Message {
 
     private byte[] rawHeader;
 
@@ -27,12 +27,12 @@ public class AuthServerMessageHeader implements Message {
 
     private int payloadSize;
 
-    public AuthServerMessageHeader(byte version, MessageCode code, int payloadSize) {
+    public ServerMessageHeader(byte version, MessageCode code, int payloadSize) {
         this(null, version, code, payloadSize);
     }
 
 
-    public AuthServerMessageHeader(String clientID, byte version, MessageCode code, int payloadSize) {
+    public ServerMessageHeader(String clientID, byte version, MessageCode code, int payloadSize) {
         this.clientID = clientID;
         this.version = version;
         this.code = code;
@@ -67,18 +67,18 @@ public class AuthServerMessageHeader implements Message {
      * @param payloadSize - the  new payload size to use
      * @return the new header.
      */
-    public AuthServerMessageHeader toResponseHeader(MessageCode newCode, int payloadSize) {
-        return new AuthServerMessageHeader(this.version, newCode, payloadSize);
+    public ServerMessageHeader toResponseHeader(MessageCode newCode, int payloadSize) {
+        return new ServerMessageHeader(this.version, newCode, payloadSize);
     }
 
     /**
      * Parses a byte array as the request header.
      *
      * @param rawHeader - the raw bytes for the header
-     * @return the {@link AuthServerMessageHeader} for the provided bytes
+     * @return the {@link ServerMessageHeader} for the provided bytes
      * @throws InvalidMessageCodeException - In case the data provided is invalid.
      */
-    public static AuthServerMessageHeader parseHeader(byte[] rawHeader) throws InvalidMessageCodeException {
+    public static ServerMessageHeader parseHeader(byte[] rawHeader) throws InvalidMessageCodeException {
         if (rawHeader == null || (rawHeader.length != Constants.REQUEST_HEADER_SIZE && rawHeader.length != Constants.RESPONSE_HEADER_SIZE)) {
             throw new InvalidMessageCodeException("header");
         }
@@ -101,7 +101,7 @@ public class AuthServerMessageHeader implements Message {
             throw new InvalidMessageCodeException("Version");
         }
 
-        AuthServerMessageHeader header = new AuthServerMessageHeader(clientId, version, reqCode, payloadSize);
+        ServerMessageHeader header = new ServerMessageHeader(clientId, version, reqCode, payloadSize);
         header.setRawHeader(rawHeader);
 
         return header;

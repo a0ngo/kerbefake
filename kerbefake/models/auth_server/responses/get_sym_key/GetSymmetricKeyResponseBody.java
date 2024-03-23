@@ -1,16 +1,13 @@
 package kerbefake.models.auth_server.responses.get_sym_key;
 
-import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.EncryptedKey;
 import kerbefake.models.Ticket;
-import kerbefake.models.auth_server.AuthServerMessageBody;
-
-import java.nio.charset.StandardCharsets;
+import kerbefake.models.ServerMessageBody;
 
 import static kerbefake.Utils.*;
 
-public class GetSymmetricKeyResponseBody extends AuthServerMessageBody {
+public class GetSymmetricKeyResponseBody extends ServerMessageBody {
 
     private String clientId;
 
@@ -28,7 +25,7 @@ public class GetSymmetricKeyResponseBody extends AuthServerMessageBody {
     }
 
     @Override
-    public AuthServerMessageBody parse(byte[] bodyBytes) throws Exception {
+    public ServerMessageBody parse(byte[] bodyBytes) throws Exception {
         if (bodyBytes.length != 185) {
             throw new InvalidMessageException(String.format("Invalid payload size, expected 169, got %d", bodyBytes.length));
         }

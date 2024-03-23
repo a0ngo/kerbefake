@@ -1,10 +1,10 @@
 package kerbefake.models.auth_server.responses.get_sym_key;
 
-import kerbefake.models.auth_server.AuthServerMessage;
-import kerbefake.models.auth_server.AuthServerMessageHeader;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
 
-public class GetSymmetricKeyResponse extends AuthServerMessage {
-    public GetSymmetricKeyResponse(AuthServerMessageHeader header, GetSymmetricKeyResponseBody body) {
+public class GetSymmetricKeyResponse extends ServerMessage {
+    public GetSymmetricKeyResponse(ServerMessageHeader header, GetSymmetricKeyResponseBody body) {
         super(header, body);
     }
 }

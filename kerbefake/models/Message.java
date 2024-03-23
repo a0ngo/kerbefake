@@ -1,4 +1,4 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 /**
  * General interface for any message sent back and forth.

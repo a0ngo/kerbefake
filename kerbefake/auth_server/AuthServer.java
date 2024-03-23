@@ -1,4 +1,4 @@
-package kerbefake;
+package kerbefake.auth_server;
 
 import kerbefake.models.auth_server.KnownPeers;
 

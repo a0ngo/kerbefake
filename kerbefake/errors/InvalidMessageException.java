@@ -1,6 +1,6 @@
 package kerbefake.errors;
 
-import kerbefake.models.auth_server.MessageCode;
+import kerbefake.models.MessageCode;
 
 public class InvalidMessageException extends Exception{
 

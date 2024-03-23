@@ -1,4 +1,4 @@
-package kerbefake.models.auth_server;
+package kerbefake.models;
 
 /**
  * Indicates that a class s a field that is sent as part of a message.
