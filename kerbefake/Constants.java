@@ -42,6 +42,10 @@ public final class Constants {
         public static final short REGISTER_CLIENT_CODE = 1024;
 
         public static final short REQ_ENC_SYM_KEY = 1027;
+
+        public static final short SUBMIT_TICKET = 1028;
+
+        public static final short SUBMIT_MESSAGE = 1029;
     }
 
 
@@ -51,6 +55,10 @@ public final class Constants {
         public static final short REGISTER_CLIENT_FAILURE_CODE = 1601;
 
         public static final short SEND_ENC_SYM_KEY = 1603;
+
+        public static final short SUBMIT_TICKET_SUCCESS = 1604;
+
+        public static final short SUBMIT_MESSAGE_SUCCESS = 1605;
 
         public static final short UNKNOWN_FAILURE_CODE = 1609;
     }
