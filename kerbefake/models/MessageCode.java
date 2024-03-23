@@ -35,32 +35,32 @@ public enum MessageCode {
     /**
      * A request to register a client
      */
-    REGISTER_CLIENT(Constants.RequestCodes.REGISTER_CLIENT_CODE, RegisterClientRequest.class, RegisterClientRequestBody.class),
+    REGISTER_CLIENT(Constants.RequestCodes.REGISTER_CLIENT_CODE, RegisterClientRequest.class, RegisterClientRequestBody.class, true),
 
     /**
      * Successful response for client registration.
      */
-    REGISTER_CLIENT_SUCCESS(Constants.ResponseCodes.REGISTER_CLIENT_SUCCESS_CODE, RegisterClientResponse.class, RegisterClientResponseBody.class),
+    REGISTER_CLIENT_SUCCESS(Constants.ResponseCodes.REGISTER_CLIENT_SUCCESS_CODE, RegisterClientResponse.class, RegisterClientResponseBody.class, true),
     /**
      * Failure response for client registration.
      */
-    REGISTER_CLIENT_FAILED(Constants.ResponseCodes.REGISTER_CLIENT_FAILURE_CODE, FailureResponse.class, null),
+    REGISTER_CLIENT_FAILED(Constants.ResponseCodes.REGISTER_CLIENT_FAILURE_CODE, FailureResponse.class, null, true),
 
     /**
      * A user requests a symmetric key to communicate with a message server.
      */
-    REQUEST_SYMMETRIC_KEY(Constants.RequestCodes.REQ_ENC_SYM_KEY, GetSymmetricKeyRequest.class, GetSymmetricKeyRequestBody.class),
+    REQUEST_SYMMETRIC_KEY(Constants.RequestCodes.REQ_ENC_SYM_KEY, GetSymmetricKeyRequest.class, GetSymmetricKeyRequestBody.class, true),
 
     /**
      * Success response for getting a symmetric key for communication.
      */
-    REQUEST_SYMMETRIC_KEY_SUCCESS(Constants.ResponseCodes.SEND_ENC_SYM_KEY, GetSymmetricKeyResponse.class, GetSymmetricKeyResponseBody.class),
+    REQUEST_SYMMETRIC_KEY_SUCCESS(Constants.ResponseCodes.SEND_ENC_SYM_KEY, GetSymmetricKeyResponse.class, GetSymmetricKeyResponseBody.class, true),
 
-    SUBMIT_TICKET(Constants.RequestCodes.SUBMIT_TICKET, SubmitTicketRequest.class, SubmitTicketRequestBody.class),
+    SUBMIT_TICKET(Constants.RequestCodes.SUBMIT_TICKET, SubmitTicketRequest.class, SubmitTicketRequestBody.class, false),
 
-    SUBMIT_TICKET_SUCCESS(Constants.ResponseCodes.SUBMIT_TICKET_SUCCESS, SubmitTicketResponse.class, null),
+    SUBMIT_TICKET_SUCCESS(Constants.ResponseCodes.SUBMIT_TICKET_SUCCESS, SubmitTicketResponse.class, null, false),
 
-    UNKNOWN_FAILURE(Constants.ResponseCodes.UNKNOWN_FAILURE_CODE, FailureResponse.class, null);
+    UNKNOWN_FAILURE(Constants.ResponseCodes.UNKNOWN_FAILURE_CODE, FailureResponse.class, null, true);
     /**
      * The code for a given request
      */
@@ -82,10 +82,16 @@ public enum MessageCode {
      */
     private final Class<? extends ServerMessageBody> bodyClazz;
 
-    MessageCode(short code, Class<? extends ServerMessage> messageClazz, Class<? extends ServerMessageBody> bodyClazz) {
+    /**
+     * Indicates whether this message class should be handled by the auth server or message server.
+     */
+    private final boolean forAuthServer;
+
+    MessageCode(short code, Class<? extends ServerMessage> messageClazz, Class<? extends ServerMessageBody> bodyClazz, boolean forAuthServer) {
         this.code = code;
         this.messageClazz = messageClazz;
         this.bodyClazz = bodyClazz;
+        this.forAuthServer = forAuthServer;
     }
 
     /**
@@ -130,4 +136,7 @@ public enum MessageCode {
         return matchingCodes.get(0);
     }
 
+    public boolean isForAuthServer() {
+        return this.forAuthServer;
+    }
 }
