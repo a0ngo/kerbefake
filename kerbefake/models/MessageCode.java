@@ -1,5 +1,7 @@
 package kerbefake.models;
 
+import com.sun.corba.se.impl.orbutil.closure.Constant;
+import com.sun.org.apache.bcel.internal.Const;
 import kerbefake.Constants;
 import kerbefake.auth_server.AuthServerConnectionHandler;
 import kerbefake.errors.InvalidMessageCodeException;
@@ -12,6 +14,9 @@ import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyRespons
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
 import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
+import kerbefake.models.msg_server.requests.SubmitTicketRequest;
+import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
+import kerbefake.models.msg_server.responses.SubmitTicketResponse;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -50,6 +55,10 @@ public enum MessageCode {
      * Success response for getting a symmetric key for communication.
      */
     REQUEST_SYMMETRIC_KEY_SUCCESS(Constants.ResponseCodes.SEND_ENC_SYM_KEY, GetSymmetricKeyResponse.class, GetSymmetricKeyResponseBody.class),
+
+    SUBMIT_TICKET(Constants.RequestCodes.SUBMIT_TICKET, SubmitTicketRequest.class, SubmitTicketRequestBody.class),
+
+    SUBMIT_TICKET_SUCCESS(Constants.ResponseCodes.SUBMIT_TICKET_SUCCESS, SubmitTicketResponse.class, null),
 
     UNKNOWN_FAILURE(Constants.ResponseCodes.UNKNOWN_FAILURE_CODE, FailureResponse.class, null);
     /**

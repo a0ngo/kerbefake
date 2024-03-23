@@ -3,6 +3,7 @@ package kerbefake;
 import kerbefake.auth_server.AuthServer;
 import kerbefake.msg_server.MessageServer;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 import static kerbefake.Logger.error;
@@ -35,7 +36,13 @@ public class Main {
                 new AuthServer();
                 break;
             case Constants.MODE_SERVER:
-                new MessageServer();
+                try {
+                    MessageServer server = new MessageServer();
+                    new Thread(server::start).start();
+                } catch (IOException e) {
+                    error("Failed to start message server due to: %s", e);
+                    return;
+                }
                 break;
         }
 
