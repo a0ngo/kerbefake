@@ -18,7 +18,7 @@ public class SendMessageRequest extends EncryptedServerMessage implements Server
         if (body.isEncrypted()) {
             throw new RuntimeException("Message was not decrypted before execution");
         }
-        System.out.printf("Message from user (%s): %s", this.header.getClientID(), body.getMessage());
+        System.out.printf("Message from user (%s): %s\n", this.header.getClientID(), body.getMessage());
 
         return new EmptyResponse(this.header.toResponseHeader(MessageCode.SEND_MESSAGE_SUCCESS, 0));
     }
