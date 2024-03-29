@@ -11,7 +11,7 @@ import static kerbefake.Logger.info;
 /**
  * General utilities for testing purposes.
  */
-public final class TestUtils {
+final class TestUtils {
 
     public static Thread startAuthServer() {
         AuthServer server = new AuthServer();

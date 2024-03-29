@@ -33,7 +33,7 @@ import static kerbefake.tests.TestUtils.*;
  * A test class for client registration request - {@link RegisterClientRequest}
  */
 @SuppressWarnings({"unused", "ConstantValue", "JavadocDeclaration"})
-public final class Tests {
+final class Tests {
 
     public static final String PASSWORD = "strongPassword123!";
 
