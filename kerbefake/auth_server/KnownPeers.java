@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static kerbefake.Constants.CLIENTS_FILE_NAME;
+import static kerbefake.Constants.SERVER_CONFIG_FILE_NAME;
 import static kerbefake.Logger.*;
 
 public final class KnownPeers {
@@ -95,7 +96,7 @@ public final class KnownPeers {
     private void readMsgServerData() {
         BufferedReader serverReader;
         try {
-            serverReader = new BufferedReader(new FileReader("msg.info"));
+            serverReader = new BufferedReader(new FileReader(SERVER_CONFIG_FILE_NAME));
         } catch (FileNotFoundException e) {
             error("Unable to find msg.info file, no messaging server provided.");
             throw new RuntimeException(e);
