@@ -1,5 +1,6 @@
 package kerbefake.auth_server;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.ServerMessage;
 import kerbefake.models.ServerMessageHeader;
@@ -71,7 +72,7 @@ public class AuthServerConnectionHandler implements Runnable {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
                     break;
-                } catch (IOException ex) {
+                } catch (IOException | InvalidHexStringException ex) {
                     error("Failed to write failure response: %s", e);
                     break;
                 }
@@ -86,7 +87,7 @@ public class AuthServerConnectionHandler implements Runnable {
                 try {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
-                } catch (IOException ex) {
+                } catch (IOException | InvalidHexStringException ex) {
                     e.printStackTrace();
                     // Hopefully this will be fixed later one.
                 }

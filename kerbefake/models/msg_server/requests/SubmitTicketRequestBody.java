@@ -1,5 +1,6 @@
 package kerbefake.models.msg_server.requests;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.Authenticator;
 import kerbefake.models.ServerMessageBody;
 import kerbefake.models.Ticket;
@@ -40,7 +41,7 @@ public class SubmitTicketRequestBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         if (authenticator == null || ticket == null) {
             throw new RuntimeException("Missing authenticator or ticket data.");
         }

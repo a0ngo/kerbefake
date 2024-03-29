@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.responses;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.ServerMessage;
 import kerbefake.models.ServerMessageHeader;
 
@@ -10,7 +11,7 @@ public class FailureResponse extends ServerMessage {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         return header.toLEByteArray();
     }
 }

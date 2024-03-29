@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.requests.get_sym_key;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.ClientEntry;
 import kerbefake.auth_server.KnownPeers;
@@ -21,7 +22,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
     }
 
     @Override
-    public ServerMessage execute() {
+    public ServerMessage execute() throws InvalidHexStringException {
         FailureResponse failure = new FailureResponse(this.header.toResponseHeader(MessageCode.UNKNOWN_FAILURE, 0));
         KnownPeers peers = KnownPeers.getInstance();
         ClientEntry client;

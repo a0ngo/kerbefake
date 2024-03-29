@@ -76,7 +76,7 @@ public class MessageServerConnectionHandler implements Runnable {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
                     break;
-                } catch (IOException ex) {
+                } catch (IOException | InvalidHexStringException ex) {
                     error("Failed to write failure response: %s", e);
                     break;
                 }
