@@ -7,6 +7,7 @@ import java.util.TimerTask;
 
 import static kerbefake.Logger.error;
 import static kerbefake.Logger.warn;
+import static kerbefake.client.UserInputOutputHandler.getServerAddress;
 
 /**
  * This class is responsible for handling all the connections and sessions that a client creates.
@@ -28,6 +29,35 @@ public final class NetworkManager {
         instance = this;
         connections = new HashMap<>();
         terminationTimer = new Timer();
+    }
+
+    /**
+     * @see #openConnectionToUserProvidedServer(ServerType, String, int, int)
+     */
+    public ClientConnection openConnectionToUserProvidedServer(ServerType type, String defaultIp, int defaultPort) {
+        return openConnection(type, defaultIp, defaultPort, 3000);
+    }
+
+    /**
+     * Queries the user for an IP and port to connect to, following which tries to open a connection based off the server type provided.
+     *
+     * @param type          - the server type.
+     * @param defaultIp     - the default IP for this server.
+     * @param defaultPort   - the default port for this server.
+     * @param timeTillClose - the time in seconds until the connection is closed automatically.
+     * @return - A {@link ClientConnection} client connection for the connection to the server.
+     */
+    public ClientConnection openConnectionToUserProvidedServer(ServerType type, String defaultIp, int defaultPort, int timeTillClose) {
+        String defaultAddress = String.format("%s:%d", defaultIp, defaultPort);
+        String fullServerAddress = getServerAddress(type == ServerType.AUTH ? "auth" : "message", defaultAddress);
+        String serverIp = defaultIp;
+        int port = defaultPort;
+        if (!fullServerAddress.equals(defaultAddress)) {
+            String[] addressComponents = fullServerAddress.split(":");
+            serverIp = addressComponents[0];
+            port = Integer.parseInt(addressComponents[1]);
+        }
+        return openConnection(type, serverIp, port, timeTillClose);
     }
 
     /**
@@ -75,9 +105,9 @@ public final class NetworkManager {
                 connection.close();
             }
         };
-        terminationTimer.schedule(terminateConnectionTask, timeTillClose);
+        terminationTimer.schedule(terminateConnectionTask, timeTillClose * 1000L);
 
-        ConnectionDetails details = new ConnectionDetails(terminateConnectionTask, connection);
+        ConnectionDetails details = new ConnectionDetails(terminateConnectionTask, connection, timeTillClose);
         this.connections.put(type, details);
         return connection;
     }
@@ -105,9 +135,8 @@ public final class NetworkManager {
             return openConnection(serverType, ip, port, 300);
         }
 
-        //TODO: reset termination time to the original one specified.
-        connDetails.terminationTask.cancel();
-        terminationTimer.schedule(connDetails.terminationTask, 300);
+        connDetails.getTerminationTask().cancel();
+        terminationTimer.schedule(connDetails.getTerminationTask(), connDetails.getTimeTillTermination());
 
         return conn;
     }
@@ -130,12 +159,14 @@ public final class NetworkManager {
 
         private ClientConnection connection;
 
+        private int timeTillTermination;
         // TODO: Add session
 
 
-        public ConnectionDetails(TimerTask terminationTask, ClientConnection connection) {
+        public ConnectionDetails(TimerTask terminationTask, ClientConnection connection, int timeTillTermination) {
             this.terminationTask = terminationTask;
             this.connection = connection;
+            this.timeTillTermination = timeTillTermination;
         }
 
         public TimerTask getTerminationTask() {
@@ -152,6 +183,10 @@ public final class NetworkManager {
 
         public void setConnection(ClientConnection connection) {
             this.connection = connection;
+        }
+
+        public int getTimeTillTermination() {
+            return timeTillTermination;
         }
 
         /**
