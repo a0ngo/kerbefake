@@ -1,5 +1,6 @@
 package kerbefake.client;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.Authenticator;
 import kerbefake.models.EncryptedKey;
 import kerbefake.models.Ticket;
@@ -19,9 +20,12 @@ public final class Session {
 
     private Ticket ticket;
 
-    public Session(EncryptedKey key, Ticket ticket) {
+    private String serverId;
+
+    public Session(EncryptedKey key, Ticket ticket, String serverId) {
         this.key = key;
         this.ticket = ticket;
+        this.serverId = serverId;
     }
 
     public EncryptedKey getKey() {
@@ -40,8 +44,23 @@ public final class Session {
         this.ticket = ticket;
     }
 
-    public Authenticator creatAuthenticator(String clientIdHex, String serverIdHex) {
-        //TODO: implement
-        return null;
+    public String getServerId() {
+        return serverId;
+    }
+
+    public void setServerId(String serverId) {
+        this.serverId = serverId;
+    }
+
+    public Authenticator creatAuthenticator(String clientId) throws InvalidHexStringException {
+        SecureRandom srand = new SecureRandom();
+        byte[] iv = new byte[IV_SIZE];
+        srand.nextBytes(iv);
+        long creationTime = System.currentTimeMillis();
+        return new Authenticator(iv, clientId, serverId, creationTime);
+    }
+
+    public byte[] getSessionKey() {
+        return key.getAesKey();
     }
 }

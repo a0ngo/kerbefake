@@ -2,14 +2,15 @@ package kerbefake.client.operations;
 
 import kerbefake.client.ClientConnection;
 import kerbefake.client.Session;
-import kerbefake.client.SessionManager;
 import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.*;
+import kerbefake.models.EmptyResponse;
+import kerbefake.models.MessageCode;
+import kerbefake.models.ServerMessage;
+import kerbefake.models.ServerMessageHeader;
 import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.models.msg_server.requests.SubmitTicketRequest;
-import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
+import kerbefake.models.msg_server.requests.SendMessageRequest;
+import kerbefake.models.msg_server.requests.SendMessageRequestBody;
 
 import java.io.IOException;
 
@@ -17,30 +18,31 @@ import static kerbefake.Constants.ClientConstants.REQUEST_FAILED;
 import static kerbefake.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
 import static kerbefake.Constants.SERVER_VERSION;
 import static kerbefake.Logger.error;
+import static kerbefake.Utils.getIv;
+import static kerbefake.client.UserInputOutputHandler.promptString;
 
-public final class SubmitTicketOperation extends ClientOperation<SubmitTicketRequest, Boolean> {
+public class SendMessageOperation extends ClientOperation<SendMessageRequest, Boolean> {
 
     private Session session;
 
-    private final String clientId;
-
-    public SubmitTicketOperation(ClientConnection connection, Session session, String clientId) {
+    public SendMessageOperation(ClientConnection connection, Session session) {
         super(connection);
         this.session = session;
-        this.clientId = clientId;
     }
 
     @Override
     public Boolean perform() {
         try {
-            Authenticator authenticator = this.session.creatAuthenticator(clientId);
-            SubmitTicketRequestBody submitTicketRequestBody = new SubmitTicketRequestBody(authenticator, session.getTicket());
-            ServerMessageHeader serverMessageHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.SUBMIT_TICKET, submitTicketRequestBody.toLEByteArray().length);
-            SubmitTicketRequest submitTicketRequest = new SubmitTicketRequest(serverMessageHeader, submitTicketRequestBody);
+            byte[] iv = getIv();
+            String message = promptString("Please provide the message to send to the server", true);
 
-            submitTicketRequest.encrypt(session.getSessionKey());
+            SendMessageRequestBody sendMessageRequestBody = new SendMessageRequestBody(iv, message);
+            ServerMessageHeader serverMessageHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.SEND_MESSAGE, sendMessageRequestBody.toLEByteArray().length);
+            SendMessageRequest sendMessageRequest = new SendMessageRequest(serverMessageHeader, sendMessageRequestBody);
 
-            ServerMessage response = this.internalPerform(submitTicketRequest);
+            sendMessageRequest.encrypt(session.getSessionKey());
+
+            ServerMessage response = this.internalPerform(sendMessageRequest);
 
             if (response instanceof FailureResponse) {
                 if (response.getHeader().getMessageCode().getCode() == UNKNOWN_FAILURE_CODE) {
@@ -57,6 +59,7 @@ public final class SubmitTicketOperation extends ClientOperation<SubmitTicketReq
             }
 
             return true;
+
         } catch (IOException | InvalidHexStringException e) {
             e.printStackTrace();
             if (e instanceof InvalidHexStringException) {
@@ -73,4 +76,3 @@ public final class SubmitTicketOperation extends ClientOperation<SubmitTicketReq
         return false;
     }
 }
-

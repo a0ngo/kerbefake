@@ -23,7 +23,7 @@ public final class SessionManager {
 
     private SessionManager() {
         instance = this;
-        serverIdToSessionMapping = new HashMap<String, Session>();
+        serverIdToSessionMapping = new HashMap<>();
 
     }
 
@@ -39,25 +39,18 @@ public final class SessionManager {
             return false;
         }
 
-        Session newSession = new Session(encKey, ticket);
+        Session newSession = new Session(encKey, ticket, serverId);
         serverIdToSessionMapping.put(serverId, newSession);
         return true;
     }
 
     /**
-     * Fetches the session key for a given server id.
+     * Gets the session used for this server Id if one exists.
      *
      * @param serverId - the server ID to look for
-     * @return - a byte array representing the key or null if no such session exists.
+     * @return - the {@link Session} object if such exists, null otherwise
      */
-    public byte[] getKeyForSession(String serverId) {
-        Session existingSession = serverIdToSessionMapping.get(serverId);
-        if (existingSession == null) {
-            error("No session for: %s", serverId);
-            return null;
-        }
-
-        return existingSession.getKey().getAesKey();
+    public Session getSession(String serverId) {
+        return serverIdToSessionMapping.getOrDefault(serverId, null);
     }
-
 }

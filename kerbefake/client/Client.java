@@ -1,35 +1,31 @@
 package kerbefake.client;
 
-import java.util.Arrays;
-import java.util.Scanner;
-
- import kerbefake.Constants;
+import kerbefake.Constants;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
+import kerbefake.client.operations.SendMessageOperation;
 import kerbefake.client.operations.SubmitTicketOperation;
 import kerbefake.errors.InvalidClientConfigException;
-import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.EncryptedKey;
 import kerbefake.models.Ticket;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
+import java.util.Arrays;
+
 import static kerbefake.Constants.ClientConstants.*;
 import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.*;
-import static kerbefake.Utils.hexStringToByteArray;
 import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
 import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
 import static kerbefake.client.UserInputOutputHandler.*;
 
 public class Client implements Runnable {
 
-    private static final Scanner inputHandler = new Scanner(System.in);
     private ClientConfig clientConfig;
     private NetworkManager networkManager;
     private SessionManager sessionManager;
     private ClientState clientState;
-    private ClientAuthenticator authenticator;
 
     public Client() {
         try {
@@ -48,6 +44,7 @@ public class Client implements Runnable {
             clientConfig = ClientConfig.createEmpty();
         }
         networkManager = NetworkManager.getInstance();
+        sessionManager = SessionManager.getInstance();
     }
 
 
@@ -128,14 +125,33 @@ public class Client implements Runnable {
         return true;
     }
 
+    /**
+     * Submits a message to the message server, this involves first submitting the ticket to the message server.
+     * The server responds with an {@link kerbefake.models.EmptyResponse} but with the code {@link kerbefake.models.MessageCode#SUBMIT_TICKET_SUCCESS}.
+     * After this the client will create a message and send it to the server.
+     * In terms of handling segmentation of data, this is handled in the lower layers so we will not concern ourselves with it here.
+     *
+     * @return - true if successful, false otherwise
+     */
     private boolean sendMessageToMessageServer() {
         // Within 5 minute before this connection will be closed automatically
-        ClientConnection msgServer = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+        ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
         String serverId = getServerId();
+        Session session = sessionManager.getSession(serverId);
 
-        new SubmitTicketOperation(msgServer,null).perform();
-        return false;
+        boolean ticketSubmitSuccessful = new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
+        if (!ticketSubmitSuccessful) {
+            error("Failed to submit ticket to message server");
+            return false;
+        }
 
+        boolean sendMessageSuccessful = new SendMessageOperation(msgServerConn, session).perform();
+
+        if (!sendMessageSuccessful) {
+            error("Failed to send message to the message server");
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -158,7 +174,9 @@ public class Client implements Runnable {
                 break;
             }
 
-            performStateOperation();
+            if (!performStateOperation()) {
+                error("Failed to perform requested operation.");
+            }
         }
     }
 
