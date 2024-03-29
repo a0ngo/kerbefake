@@ -9,10 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +22,8 @@ import static kerbefake.Logger.error;
  * A bunch of useful utility functions
  */
 public final class Utils {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
      * Returns a LE (Little Endian) byte buffer.
@@ -261,5 +260,29 @@ public final class Utils {
         return digest.digest(bytes);
     }
 
+    /**
+     * Generates a random IV from a secure source
+     *
+     * @return a byte array of {@link Constants#IV_SIZE} size.
+     */
+    public static byte[] getIv() {
+        return getSecureRandomBytes(16);
+    }
+
+    /**
+     * Generates random bytes from a secure source with a given size
+     *
+     * @param size - the size requested
+     * @return the byte array
+     */
+    public static byte[] getSecureRandomBytes(int size) {
+        if (size < 1) {
+            throw new IllegalArgumentException("Requested a negative size of byte array.");
+        }
+
+        byte[] bytes = new byte[size];
+        SECURE_RANDOM.nextBytes(bytes);
+        return bytes;
+    }
 
 }
