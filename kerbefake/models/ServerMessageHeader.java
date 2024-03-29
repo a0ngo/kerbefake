@@ -1,6 +1,7 @@
 package kerbefake.models;
 
 import kerbefake.Constants;
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageCodeException;
 
 import java.nio.ByteBuffer;
@@ -52,7 +53,7 @@ public class ServerMessageHeader implements Message {
         return clientID;
     }
 
-    public MessageCode getCode() {
+    public MessageCode getMessageCode() {
         return code;
     }
 
@@ -108,7 +109,7 @@ public class ServerMessageHeader implements Message {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         // The raw header is received in little endian so we can return it.
         if (this.rawHeader != null) {
             return this.rawHeader;

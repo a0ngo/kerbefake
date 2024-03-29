@@ -1,6 +1,7 @@
 package kerbefake.models;
 
 import kerbefake.Utils;
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 
 import java.nio.charset.StandardCharsets;
@@ -150,7 +151,7 @@ public class Ticket extends EncryptedServerMessageBody {
     }
 
 
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         if (clientId == null || clientId.length() != ID_LENGTH) {
             throw new RuntimeException("Client id is missing or invalid");
         }

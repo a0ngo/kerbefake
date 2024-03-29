@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.responses.register_client;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidResponseDataException;
 import kerbefake.models.ServerMessageBody;
 
@@ -34,7 +35,7 @@ public class RegisterClientResponseBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException  {
         return byteArrayToLEByteBuffer(hexStringToByteArray(this.id)).array();
     }
 

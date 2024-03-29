@@ -48,7 +48,7 @@ public class AuthServerConnectionHandler implements Runnable {
                 if (message == null) {
                     continue;
                 }
-                if (!message.getHeader().getCode().isForAuthServer()) {
+                if (!message.getHeader().getMessageCode().isForAuthServer()) {
                     out.write(unknownFailure.toLEByteArray());
                     continue;
                 }

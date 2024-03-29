@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.requests.get_sym_key;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.ServerMessageBody;
 
@@ -40,7 +41,7 @@ public class GetSymmetricKeyRequestBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         byte[] byteArr = new byte[24];
         if (this.serverId == null || this.nonce == null || this.serverId.length() != 32 || this.nonce.length != 8) {
             throw new RuntimeException("Missing or invalid values for nonce / server ID.");

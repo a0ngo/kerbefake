@@ -1,5 +1,6 @@
 package kerbefake.models;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.errors.InvalidMessageCodeException;
 
@@ -30,7 +31,7 @@ public abstract class ServerMessageBody {
      *
      * @return - the LE byte array representing this response.
      */
-    public abstract byte[] toLEByteArray();
+    public abstract byte[] toLEByteArray() throws InvalidHexStringException;
 
     public static ServerMessageBody parse(ServerMessageHeader header, BufferedInputStream stream) throws InvalidMessageException {
         int payloadSize = header.getPayloadSize();
@@ -47,11 +48,11 @@ public abstract class ServerMessageBody {
             }
 
             try {
-                return header.getCode().getBodyClass().getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
+                return header.getMessageCode().getBodyClass().getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
             } catch (InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 error("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
-                throw new InvalidMessageException(header.getCode());
+                throw new InvalidMessageException(header.getMessageCode());
             }
 
         } catch (IOException | InvocationTargetException e) {

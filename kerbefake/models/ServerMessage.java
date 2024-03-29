@@ -1,6 +1,7 @@
 package kerbefake.models;
 
 import kerbefake.Constants;
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.errors.InvalidMessageCodeException;
 
@@ -44,7 +45,7 @@ public abstract class ServerMessage {
      *
      * @return - the little endian byte array.
      */
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         byte[] header = this.header.toLEByteArray();
         byte[] body = this.body == null ? new byte[0] : this.body.toLEByteArray();
 
@@ -68,7 +69,7 @@ public abstract class ServerMessage {
         }
         ServerMessageBody body = ServerMessageBody.parse(header, in);
 
-        MessageCode messageCode = header.getCode();
+        MessageCode messageCode = header.getMessageCode();
 
         /*
          * Here we parse a message according to the specified message class in MessageCode.

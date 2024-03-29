@@ -1,5 +1,6 @@
 package kerbefake.models.auth_server.responses.get_sym_key;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.EncryptedKey;
 import kerbefake.models.EncryptedServerMessageBody;
@@ -39,7 +40,7 @@ public class GetSymmetricKeyResponseBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() {
+    public byte[] toLEByteArray() throws InvalidHexStringException {
         byte[] encKeyBytes = encKey.toLEByteArray();
         byte[] ticketBytes = ticket.toLEByteArray();
 

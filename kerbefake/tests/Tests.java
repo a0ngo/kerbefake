@@ -1,5 +1,6 @@
 package kerbefake.tests;
 
+import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
@@ -41,7 +42,7 @@ public final class Tests {
 
     public static String CLIENT_ID = null;
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
         info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
         testFullCorrectFlow();
         info("TEST - Waiting 3 seconds to make sure all threads are dead.");
@@ -53,7 +54,7 @@ public final class Tests {
         testExpiredTicket();
     }
 
-    private static void testExpiredTicket() throws NoSuchAlgorithmException, InterruptedException, IOException {
+    private static void testExpiredTicket() throws NoSuchAlgorithmException, InterruptedException, IOException, InvalidHexStringException {
         SocketAndStreams result = getSocketsAndStreams();
 
         try {
@@ -85,7 +86,7 @@ public final class Tests {
             Thread.sleep(5 * 1000);
             try {
                 submitTicketToMsgServer(result.msgServerOutputStream, result.msgServerInputStream, ticket, clientId, encryptedKey);
-            } catch (RuntimeException e) {
+            } catch (InvalidHexStringException | RuntimeException e) {
                 if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                     info("TEST - ✅ Test failed as expected");
                     return;
@@ -113,7 +114,7 @@ public final class Tests {
         SocketAndStreams socketsAndStreams = getSocketsAndStreams();
         try {
             registerClient(socketsAndStreams.authServerOutputStream, socketsAndStreams.authServerInputStream);
-        } catch (RuntimeException e) {
+        } catch (InvalidHexStringException | RuntimeException e) {
             if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                 info("TEST - ✅ Test failed as expected");
                 return;
@@ -133,7 +134,7 @@ public final class Tests {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    private static void testFullCorrectFlow() throws IOException, NoSuchAlgorithmException, InterruptedException {
+    private static void testFullCorrectFlow() throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
         SocketAndStreams result = getSocketsAndStreams();
 
         try {
@@ -181,14 +182,14 @@ public final class Tests {
      * @return A string corresponding to the client ID or null in case of an error
      * @throws IOException - in case of an IO error when communicating with the server
      */
-    private static String registerClient(OutputStream out, InputStream in) throws IOException {
+    private static String registerClient(OutputStream out, InputStream in) throws IOException, InvalidHexStringException {
         info("TEST - ================ Submit Ticket to Message Server (1024) ===================");
         info("TEST - Trying to register client with auth server.");
 
         String randomId = bytesToHexString(new byte[16]);
         String name = "Ron Person\0";
-        String password = "strongPassword123!\0";
-        int payloadSize = name.length() + password.length();
+        char[] password = "strongPassword123!\0".toCharArray();
+        int payloadSize = name.length() + password.length;
         RegisterClientRequest request = new RegisterClientRequest(new ServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
         RegisterClientResponse response = sendRequestAndGetResponse(out, in, request);
         if (response == null) {
@@ -201,7 +202,7 @@ public final class Tests {
 
     }
 
-    private static GetSymmetricKeyResponse getSymKey(OutputStream out, InputStream in, String clientId) throws IOException {
+    private static GetSymmetricKeyResponse getSymKey(OutputStream out, InputStream in, String clientId) throws IOException, InvalidHexStringException {
         info("TEST - ================ Submit Ticket to Message Server (1027) ===================");
         info("TEST - Trying to get symmetric key from auth server.");
         byte[] nonce = new byte[8];
@@ -250,7 +251,7 @@ public final class Tests {
      * @param clientId - our client ID
      * @param key      - the key which holds our session key
      */
-    private static void submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException {
+    private static void submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidHexStringException {
         info("TEST - ================ Submit Ticket to Message Server (1028) ===================");
         info("TEST - Submitting a ticket to the message server.");
 
@@ -281,7 +282,7 @@ public final class Tests {
      * @param clientId - the client ID to use
      * @throws IOException in case of a failure to send the request or get the response
      */
-    private static void sendMessageToMsgServer(OutputStream out, InputStream in, EncryptedKey key, String clientId) throws IOException {
+    private static void sendMessageToMsgServer(OutputStream out, InputStream in, EncryptedKey key, String clientId) throws IOException, InvalidHexStringException {
         info("TEST - ================ Send Message to Message Server ===================");
         info("TEST - Sending a message to the message server.");
         byte[] iv = getIv();
@@ -323,7 +324,7 @@ public final class Tests {
         }
     }
 
-    private static <T extends ServerMessage> T sendRequestAndGetResponse(OutputStream out, InputStream in, ServerMessage req) throws IOException {
+    private static <T extends ServerMessage> T sendRequestAndGetResponse(OutputStream out, InputStream in, ServerMessage req) throws IOException, InvalidHexStringException {
         out.write(req.toLEByteArray());
         ServerMessage response = null;
         try {

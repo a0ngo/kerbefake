@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static kerbefake.Logger.error;
 import static kerbefake.Logger.info;
+import static kerbefake.Utils.performSha256OnValue;
 
 public class RegisterClientRequest extends ServerMessage implements ServerRequest {
 
@@ -37,13 +38,14 @@ public class RegisterClientRequest extends ServerMessage implements ServerReques
 
 
         info("Trying to execute register client request.");
+        byte[] passwordHash;
         try {
-            digest = MessageDigest.getInstance("SHA-256");
+            passwordHash = performSha256OnValue(body.getPassword());
         } catch (NoSuchAlgorithmException e) {
-            error("Failed to create message digest for SHA-256 due to: %s", e);
+            e.printStackTrace();
+            error("No SHA-256 digest on this machine, can't proceed.");
             return failedResponse;
         }
-        byte[] passwordHash = digest.digest(body.getPassword().getBytes());
         String id = UUID.randomUUID().toString().replace("-", "");
         boolean addedClient;
         try {
