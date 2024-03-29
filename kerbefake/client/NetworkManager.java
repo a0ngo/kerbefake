@@ -83,6 +83,36 @@ public final class NetworkManager {
     }
 
     /**
+     * Tries to get an existing connection for a given server type
+     *
+     * @param serverType - the server type to check for
+     * @return a {@link ClientConnection} for the server type if such exists, null otherwise.
+     */
+    public ClientConnection getConnectionForServer(ServerType serverType) {
+        ConnectionDetails connDetails = connections.get(serverType);
+        if (connDetails == null) {
+            return null;
+        }
+
+        ClientConnection conn = connDetails.connection;
+        if (!conn.isOpen()) {
+            error("Connection was closed, will try to re-open");
+            connections.remove(serverType);
+            String[] addressComponents = conn.getServerAddress().split(":");
+            String ip = addressComponents[0];
+            int port = Integer.parseInt(addressComponents[1]);
+            // 5 minute till termination.
+            return openConnection(serverType, ip, port, 300);
+        }
+
+        //TODO: reset termination time to the original one specified.
+        connDetails.terminationTask.cancel();
+        terminationTimer.schedule(connDetails.terminationTask, 300);
+
+        return conn;
+    }
+
+    /**
      * An enum that contains the types of servers we can connect to.
      */
     protected enum ServerType {
