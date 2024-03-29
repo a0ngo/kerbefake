@@ -1,6 +1,6 @@
 package kerbefake.common.entities;
 
-import kerbefake.common.Utils;
+import kerbefake.common.CryptoUtils;
 import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
 
@@ -89,7 +89,7 @@ public class Authenticator extends EncryptedServerMessageBody {
             offset += this.serverIdBytes.length;
             System.arraycopy(this.creationTime, 0, dataToEncrypt, offset, this.creationTime.length);
 
-            this.encryptedData = Utils.encrypt(key, this.iv, dataToEncrypt);
+            this.encryptedData = CryptoUtils.encrypt(key, this.iv, dataToEncrypt);
             return true;
         } catch (RuntimeException e) {
             error("Encryption failed due to: %s", e);
@@ -107,7 +107,7 @@ public class Authenticator extends EncryptedServerMessageBody {
             throw new RuntimeException("IV is missing or is 0.");
         }
         try {
-            byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
+            byte[] decryptedData = CryptoUtils.decrypt(key, this.iv, this.encryptedData);
             if (decryptedData.length != DATA_DECRYPTED_SIZE) {
                 error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
                 return false;

@@ -1,11 +1,12 @@
 package kerbefake.common.entities;
 
-import kerbefake.common.Utils;
+import kerbefake.common.CryptoUtils;
 import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Constants.NONCE_SIZE;
 import static kerbefake.common.Logger.error;
-import static kerbefake.common.Utils.*;
+import static kerbefake.common.Utils.assertNonZeroedByteArrayOfLengthN;
+import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
 
 public class EncryptedKey extends EncryptedServerMessageBody {
 
@@ -43,7 +44,7 @@ public class EncryptedKey extends EncryptedServerMessageBody {
             return false;
         }
         try {
-            byte[] decryptedData = Utils.decrypt(key, this.iv, this.encryptedData);
+            byte[] decryptedData = CryptoUtils.decrypt(key, this.iv, this.encryptedData);
             this.nonce = new byte[8];
             this.aesKey = new byte[32];
             System.arraycopy(decryptedData, 0, this.nonce, 0, 8);
@@ -77,7 +78,7 @@ public class EncryptedKey extends EncryptedServerMessageBody {
             System.arraycopy(nonce, 0, dataToEncrypt, 0, 8);
             System.arraycopy(aesKey, 0, dataToEncrypt, 8, 32);
 
-            this.encryptedData = Utils.encrypt(key, this.iv, dataToEncrypt);
+            this.encryptedData = CryptoUtils.encrypt(key, this.iv, dataToEncrypt);
             return true;
         } catch (RuntimeException e) {
             return false;

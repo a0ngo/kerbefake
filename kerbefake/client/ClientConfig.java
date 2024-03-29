@@ -2,8 +2,12 @@ package kerbefake.client;
 
 import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.common.Constants;
+import kerbefake.common.CryptoUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
@@ -11,7 +15,6 @@ import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
 import static kerbefake.common.Constants.ID_LENGTH;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.warn;
-import static kerbefake.common.Utils.performSha256OnValue;
 
 public final class ClientConfig {
 
@@ -55,7 +58,7 @@ public final class ClientConfig {
 
     public void hashAndSetPassword(char[] password) {
         try {
-            this.passwordHash = performSha256OnValue(password);
+            this.passwordHash = CryptoUtils.performSha256(password);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             error("This machine does not support SHA-256, can't proceed, exiting.");

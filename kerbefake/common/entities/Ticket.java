@@ -1,6 +1,6 @@
 package kerbefake.common.entities;
 
-import kerbefake.common.Utils;
+import kerbefake.common.CryptoUtils;
 import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
 
@@ -80,7 +80,7 @@ public class Ticket extends EncryptedServerMessageBody {
                 throw new RuntimeException("No encrypted data or data is of invalid size.");
             }
 
-            byte[] decryptedData = Utils.decrypt(key, this.ticketIv, this.encryptedData);
+            byte[] decryptedData = CryptoUtils.decrypt(key, this.ticketIv, this.encryptedData);
             if (decryptedData.length != DATA_DECRYPTED_SIZE) {
                 error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
                 return false;
@@ -116,7 +116,7 @@ public class Ticket extends EncryptedServerMessageBody {
             System.arraycopy(aesKey, 0, dataToEncrypt, 0, 32);
             System.arraycopy(expTime, 0, dataToEncrypt, 32, 8);
 
-            this.encryptedData = Utils.encrypt(key, this.ticketIv, dataToEncrypt);
+            this.encryptedData = CryptoUtils.encrypt(key, this.ticketIv, dataToEncrypt);
             info("TEST - Decrypted data: %s, Encrypted: %s", bytesToHexString(dataToEncrypt), bytesToHexString(encryptedData));
             return true;
         } catch (RuntimeException e) {

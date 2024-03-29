@@ -1,9 +1,9 @@
 package kerbefake.msg_server.entities;
 
-import kerbefake.common.Utils;
-import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.CryptoUtils;
 import kerbefake.common.entities.EncryptedServerMessageBody;
 import kerbefake.common.entities.ServerMessageBody;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -37,7 +37,7 @@ public class SendMessageRequestBody extends EncryptedServerMessageBody {
 
         try {
             byte[] dataToEncrypt = message.getBytes(StandardCharsets.UTF_8);
-            this.encryptedData = Utils.encrypt(key, this.iv, dataToEncrypt);
+            this.encryptedData = CryptoUtils.encrypt(key, this.iv, dataToEncrypt);
             this.messageSize = this.encryptedData.length;
             return true;
         } catch (Exception e) {
@@ -54,7 +54,7 @@ public class SendMessageRequestBody extends EncryptedServerMessageBody {
         }
 
         try {
-            byte[] decryptedMessage = Utils.decrypt(key, this.iv, this.encryptedData);
+            byte[] decryptedMessage = CryptoUtils.decrypt(key, this.iv, this.encryptedData);
             this.message = new String(decryptedMessage, StandardCharsets.UTF_8);
             return true;
         } catch (Exception e) {

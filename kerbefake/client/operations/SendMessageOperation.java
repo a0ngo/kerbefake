@@ -1,25 +1,25 @@
 package kerbefake.client.operations;
 
+import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.client.ClientConnection;
 import kerbefake.client.Session;
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.entities.EmptyResponse;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
-import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SendMessageRequest;
 import kerbefake.msg_server.entities.SendMessageRequestBody;
 
 import java.io.IOException;
 
+import static kerbefake.client.UserInputOutputHandler.promptString;
 import static kerbefake.common.Constants.ClientConstants.REQUEST_FAILED;
 import static kerbefake.common.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
 import static kerbefake.common.Constants.SERVER_VERSION;
+import static kerbefake.common.CryptoUtils.getIv;
 import static kerbefake.common.Logger.error;
-import static kerbefake.common.Utils.getIv;
-import static kerbefake.client.UserInputOutputHandler.promptString;
 
 public class SendMessageOperation extends ClientOperation<SendMessageRequest, Boolean> {
 

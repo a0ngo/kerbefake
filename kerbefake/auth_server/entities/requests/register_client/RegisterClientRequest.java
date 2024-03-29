@@ -2,24 +2,23 @@ package kerbefake.auth_server.entities.requests.register_client;
 
 import kerbefake.auth_server.KnownPeers;
 import kerbefake.auth_server.entities.ClientEntry;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
+import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
 import kerbefake.auth_server.errors.InvalidClientDataException;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.entities.ServerRequest;
-import kerbefake.auth_server.entities.responses.FailureResponse;
-import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
-import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
 
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+import static kerbefake.common.CryptoUtils.performSha256;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.info;
-import static kerbefake.common.Utils.performSha256OnValue;
 
 public class RegisterClientRequest extends ServerMessage implements ServerRequest {
 
@@ -32,7 +31,6 @@ public class RegisterClientRequest extends ServerMessage implements ServerReques
     public ServerMessage execute() {
         RegisterClientRequestBody body = (RegisterClientRequestBody) this.body;
         KnownPeers clients = KnownPeers.getInstance();
-        MessageDigest digest;
 
         FailureResponse failedResponse = new FailureResponse(this.header.toResponseHeader(MessageCode.REGISTER_CLIENT_FAILED, 0));
 
@@ -40,7 +38,7 @@ public class RegisterClientRequest extends ServerMessage implements ServerReques
         info("Trying to execute register client request.");
         byte[] passwordHash;
         try {
-            passwordHash = performSha256OnValue(body.getPassword());
+            passwordHash = performSha256(body.getPassword());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             error("No SHA-256 digest on this machine, can't proceed.");
