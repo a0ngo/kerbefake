@@ -52,7 +52,7 @@ public final class ClientConfig {
         this.clientIdHex = clientIdHex;
     }
 
-    public void setPassword(char[] password) {
+    public void hashAndSetPassword(char[] password) {
         try {
             this.passwordHash = performSha256OnValue(password);
         } catch (NoSuchAlgorithmException e) {
@@ -60,6 +60,10 @@ public final class ClientConfig {
             error("This machine does not support SHA-256, can't proceed, exiting.");
             System.exit(1);
         }
+    }
+
+    public byte[] getHashedPassword() {
+        return this.passwordHash;
     }
 
     public static ClientConfig createEmpty() {
@@ -115,5 +119,6 @@ public final class ClientConfig {
         Arrays.fill(password, (char) 0);
         password = null;
     }
+
 
 }
