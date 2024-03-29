@@ -10,6 +10,8 @@ public final class Constants {
 
     public static final byte SERVER_VERSION = (byte) 24;
 
+    public static final int NONCE_SIZE = 8;
+
     /**
      * Default port for authentication server
      */

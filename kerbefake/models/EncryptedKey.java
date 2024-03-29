@@ -3,6 +3,7 @@ package kerbefake.models;
 import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageException;
 
+import static kerbefake.Constants.NONCE_SIZE;
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.*;
 
@@ -30,6 +31,10 @@ public class EncryptedKey extends EncryptedServerMessageBody {
     public EncryptedKey setAesKey(byte[] aesKey) {
         this.aesKey = aesKey;
         return this;
+    }
+
+    public boolean isEncrypted() {
+        return (this.aesKey == null || this.aesKey.length != 32) || (this.nonce == null || this.nonce.length != NONCE_SIZE);
     }
 
     @Override
