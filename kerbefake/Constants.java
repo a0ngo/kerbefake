@@ -26,6 +26,11 @@ public final class Constants {
      * ID length in hex (16 bytes).
      */
     public static final int ID_LENGTH = 32;
+
+    /**
+     * Size of any given IV in bytes.
+     */
+    public static final int IV_SIZE = 16;
     /**
      * The response header size.
      */
@@ -81,6 +86,11 @@ public final class Constants {
 
         public static final String SEND_MESSAGE_PROMPT = "Please provide a message to send to the server.";
 
+        public static final String DEFAULT_AUTH_SERVER_IP = "127.0.0.1";
+
+        public static final int DEFAULT_AUTH_SERVER_PORT = 1256;
+        public static final String DEFAULT_MESSAGE_SERVER_IP = "127.0.0.1";
+        public static final int DEFAULT_MESSAGE_SERVER_PORT = 1235;
 
     }
 
