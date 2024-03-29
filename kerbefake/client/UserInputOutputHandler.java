@@ -1,8 +1,13 @@
 package kerbefake.client;
 
-import java.util.Scanner;
+import kerbefake.errors.InvalidHexStringException;
 
+import java.util.Scanner;
+import java.util.regex.Pattern;
+
+import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.*;
+import static kerbefake.Utils.hexStringToByteArray;
 
 /**
  * A class containing static methods that are responsible for showing text to the user and getting input from the user.
@@ -10,6 +15,11 @@ import static kerbefake.Logger.*;
 public final class UserInputOutputHandler {
 
     private static final Scanner inputHandler = new Scanner(System.in);
+
+    /**
+     * For UX, suggest last server ID used.
+     */
+    private static String lastServerIdProvided = null;
 
 
     /**
@@ -63,6 +73,16 @@ public final class UserInputOutputHandler {
     }
 
     /**
+     * Prompts the user for a Yes/No response to a message
+     *
+     * @param message - the message to show the user
+     * @return - true if Y/y was provided, false otherwise
+     */
+    public static boolean promptBoolean(String message) {
+        return (boolean) prompt(message + "[Y/n]", Boolean.class);
+    }
+
+    /**
      * Prompts the user for an input
      *
      * @param message   - the message to show the user
@@ -74,6 +94,11 @@ public final class UserInputOutputHandler {
         System.out.print("> ");
         if (valueType.equals(Integer.class)) {
             return inputHandler.nextInt();
+        } else if (valueType.equals(Boolean.class)) {
+            String response = inputHandler.next(Pattern.compile("([YynN]|(Yes|YES|yes|No|NO|no))"));
+            if (response.equals("Y") || response.equals("y") || response.equals("Yes") || response.equals("YES") || response.equals("yes"))
+                return true;
+            return false;
         } else {
             if (!valueType.equals(String.class))
                 error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
@@ -121,6 +146,34 @@ public final class UserInputOutputHandler {
             break;
         } while (true);
         return defaultAddress;
+    }
+
+    /**
+     * Gets the server ID the user wants to communicate with
+     *
+     * @return
+     */
+    public static String getServerId() {
+        if (lastServerIdProvided != null) {
+            boolean reuse = promptBoolean(String.format("Would you like to use the latest server ID provided (%s)?", lastServerIdProvided));
+            if (reuse)
+                return lastServerIdProvided;
+        }
+        String serverId = promptString("Please provide the server ID to connect to;", true);
+        do {
+            if (serverId.length() == ID_LENGTH) {
+                try {
+                    hexStringToByteArray(serverId);
+                    break;
+                } catch (InvalidHexStringException e) {
+                    error("Provided server ID is not a 32 byte hex string, please try again.");
+                }
+            } else {
+                error("Provided server ID is not a 32 byte hex string, please try again.");
+            }
+            serverId = inputHandler.next();
+        } while (true);
+        return serverId;
     }
 
 }
