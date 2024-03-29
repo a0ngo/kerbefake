@@ -1,5 +1,7 @@
 package kerbefake.models;
 
+import kerbefake.errors.InvalidHexStringException;
+
 /**
  * General interface for any message sent back and forth.
  */
@@ -10,5 +12,5 @@ public interface Message {
      *
      * @return this message but in a little endian byte array.
      */
-    public byte[] toLEByteArray();
+    public byte[] toLEByteArray() throws InvalidHexStringException;
 }
