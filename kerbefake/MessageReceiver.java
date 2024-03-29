@@ -3,14 +3,14 @@ package kerbefake;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
-import kerbefake.client.ClientNetworkHandler;
+import kerbefake.client.ClientConnection;
 
 public class MessageReceiver implements Runnable {
-    private final ClientNetworkHandler networkHandler;
+    private final ClientConnection clientConnection;
     private final byte[] sessionKey;
 
-    public MessageReceiver(ClientNetworkHandler networkHandler, byte[] sessionKey) {
-        this.networkHandler = networkHandler;
+    public MessageReceiver(ClientConnection clientConnection, byte[] sessionKey) {
+        this.clientConnection = clientConnection;
         this.sessionKey = sessionKey;
     }
 
@@ -19,11 +19,11 @@ public class MessageReceiver implements Runnable {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 // Wait 
-                byte[] encryptedMessage = networkHandler.receiveMessageFromServer();
-                // Decrypt
-                String message = decryptMessage(encryptedMessage);
-                // Display
-                System.out.println("Received message: " + message);
+//                byte[] encryptedMessage = clientConnection.receiveMessageFromServer();
+//                // Decrypt
+//                String message = decryptMessage(encryptedMessage);
+//                // Display
+//                System.out.println("Received message: " + message);
             }
         } catch (Exception e) {
             System.err.println("Error while receiving or decrypting message: " + e.getMessage());

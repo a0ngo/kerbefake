@@ -5,14 +5,14 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.security.Key;
-import kerbefake.client.ClientNetworkHandler;
+import kerbefake.client.ClientConnection;
 
 public class MessageSender {
-    private final ClientNetworkHandler networkHandler;
+    private final ClientConnection clientConnection;
     private final byte[] sessionKey;
 
-    public MessageSender(ClientNetworkHandler networkHandler, byte[] sessionKey) {
-        this.networkHandler = networkHandler;
+    public MessageSender(ClientConnection clientConnection, byte[] sessionKey) {
+        this.clientConnection = clientConnection;
         this.sessionKey = sessionKey;
     }
 
@@ -26,7 +26,7 @@ public class MessageSender {
             dos.write(encryptedMessage);
 
             byte[] messagePacket = baos.toByteArray();
-            networkHandler.sendMessageToServer(messagePacket);
+//            clientConnection.send(messagePacket);
             return true;
         } catch (Exception e) {
             System.err.println("Failed to send message: " + e.getMessage());

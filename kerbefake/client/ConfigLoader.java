@@ -4,21 +4,22 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-public class ClientConfigLoader {
-    private static final String CONFIG_FILE_NAME = "client.config";
+import static kerbefake.Constants.CLIENT_CONFIG_FILE_NAME;
+
+public class ConfigLoader {
     private Properties properties;
 
-    public ClientConfigLoader() {
+    public ConfigLoader() {
         properties = new Properties();
         loadConfiguration();
     }
 
     private void loadConfiguration() {
-        try (FileInputStream fis = new FileInputStream(CONFIG_FILE_NAME)) {
+        try (FileInputStream fis = new FileInputStream(CLIENT_CONFIG_FILE_NAME)) {
             properties.load(fis);
         } catch (IOException e) {
-            System.err.println("Could not load the configuration file. Make sure " + CONFIG_FILE_NAME + " exists.");
             e.printStackTrace();
+            System.err.println("Could not load the configuration file. Make sure " + CLIENT_CONFIG_FILE_NAME + " exists.");
             System.exit(1);
         }
     }
