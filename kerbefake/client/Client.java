@@ -3,8 +3,10 @@ package kerbefake.client;
 import java.util.Arrays;
 import java.util.Scanner;
 
+ import kerbefake.Constants;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
+import kerbefake.client.operations.SubmitTicketOperation;
 import kerbefake.errors.InvalidClientConfigException;
 import kerbefake.errors.InvalidHexStringException;
 import kerbefake.models.EncryptedKey;
@@ -82,7 +84,7 @@ public class Client implements Runnable {
             case AFTER_REGISTER:
                 return getSymmetricKeyFromAuthServer();
             case AFTER_TICKET:
-//                return sendMessageToMessageServer();
+                return sendMessageToMessageServer();
             default:
                 //TODO: Add attempt to recover.
                 return false;
@@ -90,18 +92,8 @@ public class Client implements Runnable {
     }
 
     private boolean registerToServer() {
-        final String defaultAddress = "127.0.0.1:1256";
-        String fullServerAddress = getServerAddress("auth", defaultAddress);
-        String serverIp = "127.0.0.1";
-        int port = 1256;
-        if (!fullServerAddress.equals(defaultAddress)) {
-            String[] addressComponents = fullServerAddress.split(":");
-            serverIp = addressComponents[0];
-            port = Integer.parseInt(addressComponents[1]);
-        }
-
         // Within 5 minute before this connection will be closed automatically
-        ClientConnection authServerConn = networkManager.openConnection(NetworkManager.ServerType.AUTH, serverIp, port, 300);
+        ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
 
         String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword()).perform();
         if (clientId == null || clientId.length() != ID_LENGTH) {
@@ -116,20 +108,7 @@ public class Client implements Runnable {
 
     private boolean getSymmetricKeyFromAuthServer() {
         ClientConnection authServerConn = networkManager.getConnectionForServer(NetworkManager.ServerType.AUTH);
-        String serverId = promptString("Please provide the server ID to connect to;", true);
-        do {
-            if (serverId.length() == ID_LENGTH) {
-                try {
-                    hexStringToByteArray(serverId);
-                    break;
-                } catch (InvalidHexStringException e) {
-                    error("Provided server ID is not a 32 byte hex string, please try again.");
-                }
-            } else {
-                error("Provided server ID is not a 32 byte hex string, please try again.");
-            }
-            serverId = inputHandler.next();
-        } while (true);
+        String serverId = getServerId();
 
         GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId);
         GetSymmetricKeyResponse response = operation.perform();
@@ -147,6 +126,16 @@ public class Client implements Runnable {
         }
 
         return true;
+    }
+
+    private boolean sendMessageToMessageServer() {
+        // Within 5 minute before this connection will be closed automatically
+        ClientConnection msgServer = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+        String serverId = getServerId();
+
+        new SubmitTicketOperation(msgServer,null).perform();
+        return false;
+
     }
 
     @Override
