@@ -1,6 +1,7 @@
 package kerbefake;
 
 import kerbefake.errors.CryptographicException;
+import kerbefake.errors.InvalidHexStringException;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -10,10 +11,13 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import static kerbefake.Logger.error;
 
@@ -51,7 +55,8 @@ public final class Utils {
     }
 
     public static String getNullTerminatedStringFromByteArray(byte[] bytes) {
-        return getNullTerminatedStringFromByteArray(bytes, 0);
+        char[] chars = getNullTerminatedCharArrayFromByteArray(bytes, 0);
+        return chars == null ? null : new String(chars);
     }
 
     /**
@@ -59,23 +64,27 @@ public final class Utils {
      *
      * @param bytes  - the bytes to convert
      * @param offset - the offset from which to start scanning.
-     * @return A string that was found to be null terminated in the request - null if no such string was found.
+     * @return A char array that was found to be null terminated in the request - null if no such string was found.
      */
-    public static String getNullTerminatedStringFromByteArray(byte[] bytes, int offset) {
+    public static char[] getNullTerminatedCharArrayFromByteArray(byte[] bytes, int offset) {
         byte[] bytesToScan = byteArrayToLEByteBuffer(bytes).array();
-        StringBuilder strBuilder = new StringBuilder();
+        List<Character> charsList = new ArrayList<>();
         boolean nullTerminated = false;
         for (int i = offset; i < bytesToScan.length; i++) {
             if (bytesToScan[i] == 0x00) {
                 nullTerminated = true;
                 break;
             }
-            strBuilder.append((char) bytesToScan[i]);
+            charsList.add((char) bytesToScan[i]);
         }
         if (!nullTerminated) {
             return null;
         }
-        return strBuilder.toString();
+        char[] chars = new char[charsList.size()];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = charsList.get(i);
+        }
+        return chars;
     }
 
     /**
@@ -211,7 +220,7 @@ public final class Utils {
      * @param hexString - the hex string to convert
      * @return a byte array corresponding to the hex string
      */
-    public static byte[] hexStringToByteArray(String hexString) {
+    public static byte[] hexStringToByteArray(String hexString) throws InvalidHexStringException {
         String hex = hexString.length() % 2 == 0 ? hexString : "0" + hexString;
         byte[] bytes = new byte[hex.length() / 2];
         for (int i = 0; i < hex.length(); i += 2) {
@@ -219,11 +228,38 @@ public final class Utils {
             char rightDigit = hex.charAt(i + 1);
             if (leftDigit < '0' || (leftDigit > '9' && leftDigit < 'a') || leftDigit > 'f'
                     || rightDigit < '0' || (rightDigit > '9' && rightDigit < 'a') || rightDigit > 'f') {
-                throw new RuntimeException("Invalid hex string provided: " + hex);
+                throw new InvalidHexStringException(hex, i / 2);
             }
             byte b = (byte) ((Byte.parseByte(String.valueOf(leftDigit), 16) << 4) + Byte.parseByte(String.valueOf(rightDigit), 16));
             bytes[i / 2] = b;
         }
         return bytes;
     }
+
+    /**
+     * Performs SHA-256 on a given value and returns the result.
+     *
+     * @param value - the value to perform a hash on.
+     * @return the byte array of the resulting hash
+     */
+    public static byte[] performSha256OnValue(String value) throws NoSuchAlgorithmException {
+        return performSha256OnValue(value.toCharArray());
+    }
+
+    /**
+     * Performs SHA-256 on a given value and returns the result.
+     *
+     * @param value - the value to perform a hash on.
+     * @return the byte array of the resulting hash
+     */
+    public static byte[] performSha256OnValue(char[] value) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] bytes = new byte[value.length];
+        for (int i = 0; i < value.length; i++) {
+            bytes[i] = (byte) value[i];
+        }
+        return digest.digest(bytes);
+    }
+
+
 }
