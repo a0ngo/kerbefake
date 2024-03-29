@@ -1,12 +1,12 @@
 package kerbefake.client;
 
-import kerbefake.models.EncryptedKey;
-import kerbefake.models.Ticket;
+import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.Ticket;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static kerbefake.Logger.error;
+import static kerbefake.common.Logger.error;
 
 /**
  * A class that manages sessions that the client creates.

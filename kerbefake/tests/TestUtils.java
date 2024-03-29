@@ -6,7 +6,7 @@ import kerbefake.msg_server.MessageServer;
 import java.io.IOException;
 import java.util.Random;
 
-import static kerbefake.Logger.info;
+import static kerbefake.common.Logger.info;
 
 /**
  * General utilities for testing purposes.

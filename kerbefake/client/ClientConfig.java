@@ -1,16 +1,17 @@
 package kerbefake.client;
 
-import kerbefake.errors.InvalidClientConfigException;
+import kerbefake.client.errors.InvalidClientConfigException;
+import kerbefake.common.Constants;
 
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import static kerbefake.Constants.CLIENT_CONFIG_FILE_NAME;
-import static kerbefake.Constants.ID_LENGTH;
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.warn;
-import static kerbefake.Utils.performSha256OnValue;
+import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
+import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.warn;
+import static kerbefake.common.Utils.performSha256OnValue;
 
 public final class ClientConfig {
 
@@ -71,7 +72,7 @@ public final class ClientConfig {
     }
 
     /**
-     * Loads the client configuration from {@link kerbefake.Constants#CLIENT_CONFIG_FILE_NAME} (./me.config).
+     * Loads the client configuration from {@link Constants#CLIENT_CONFIG_FILE_NAME} (./me.config).
      *
      * @return a {@link ClientConfig} object
      */

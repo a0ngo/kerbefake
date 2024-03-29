@@ -1,21 +1,21 @@
 package kerbefake.tests;
 
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.*;
-import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
-import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
-import kerbefake.models.auth_server.requests.register_client.RegisterClientRequest;
-import kerbefake.models.auth_server.requests.register_client.RegisterClientRequestBody;
-import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
-import kerbefake.models.auth_server.responses.register_client.RegisterClientResponse;
-import kerbefake.models.auth_server.responses.register_client.RegisterClientResponseBody;
-import kerbefake.models.msg_server.requests.SendMessageRequest;
-import kerbefake.models.msg_server.requests.SendMessageRequestBody;
-import kerbefake.models.msg_server.requests.SubmitTicketRequest;
-import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
+import kerbefake.common.entities.*;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequest;
+import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequestBody;
+import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequest;
+import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequestBody;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
+import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
+import kerbefake.msg_server.entities.SendMessageRequest;
+import kerbefake.msg_server.entities.SendMessageRequestBody;
+import kerbefake.msg_server.entities.SubmitTicketRequest;
+import kerbefake.msg_server.entities.SubmitTicketRequestBody;
 
 import java.io.*;
 import java.net.Socket;
@@ -23,10 +23,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.info;
-import static kerbefake.Utils.bytesToHexString;
-import static kerbefake.Utils.hexStringToByteArray;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.info;
+import static kerbefake.common.Utils.bytesToHexString;
+import static kerbefake.common.Utils.hexStringToByteArray;
 import static kerbefake.tests.TestUtils.*;
 
 /**

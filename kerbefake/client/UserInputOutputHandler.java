@@ -1,13 +1,13 @@
 package kerbefake.client;
 
-import kerbefake.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidHexStringException;
 
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import static kerbefake.Constants.ID_LENGTH;
-import static kerbefake.Logger.*;
-import static kerbefake.Utils.hexStringToByteArray;
+import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Logger.*;
+import static kerbefake.common.Utils.hexStringToByteArray;
 
 /**
  * A class containing static methods that are responsible for showing text to the user and getting input from the user.

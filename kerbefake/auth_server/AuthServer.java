@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static kerbefake.Constants.DEFAULT_PORT_AUTH_SERVER;
-import static kerbefake.Logger.error;
+import static kerbefake.common.Constants.DEFAULT_PORT_AUTH_SERVER;
+import static kerbefake.common.Logger.error;
 
 /**
  * A class which handles all the functionality of the authentication server.

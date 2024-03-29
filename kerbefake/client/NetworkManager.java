@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.warn;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.warn;
 import static kerbefake.client.UserInputOutputHandler.getServerAddress;
 
 /**

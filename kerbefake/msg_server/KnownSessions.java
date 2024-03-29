@@ -1,12 +1,12 @@
 package kerbefake.msg_server;
 
-import kerbefake.models.Ticket;
+import kerbefake.common.entities.Ticket;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static kerbefake.Logger.error;
+import static kerbefake.common.Logger.error;
 
 /**
  * A class representing all known sessions and their keys to the message server

@@ -1,9 +1,9 @@
 package kerbefake.auth_server;
 
-import kerbefake.errors.InvalidClientDataException;
-import kerbefake.errors.InvalidMessageServerDataException;
-import kerbefake.models.auth_server.ClientEntry;
-import kerbefake.models.auth_server.MessageServerEntry;
+import kerbefake.auth_server.errors.InvalidClientDataException;
+import kerbefake.msg_server.errors.InvalidMessageServerDataException;
+import kerbefake.auth_server.entities.ClientEntry;
+import kerbefake.auth_server.entities.MessageServerEntry;
 
 import java.io.*;
 import java.util.Collections;
@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static kerbefake.Constants.CLIENTS_FILE_NAME;
-import static kerbefake.Constants.SERVER_CONFIG_FILE_NAME;
-import static kerbefake.Logger.*;
+import static kerbefake.common.Constants.CLIENTS_FILE_NAME;
+import static kerbefake.common.Constants.SERVER_CONFIG_FILE_NAME;
+import static kerbefake.common.Logger.*;
 
 public final class KnownPeers {
 

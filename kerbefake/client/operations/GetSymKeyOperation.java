@@ -1,24 +1,24 @@
 package kerbefake.client.operations;
 
 import kerbefake.client.ClientConnection;
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.*;
-import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequest;
-import kerbefake.models.auth_server.requests.get_sym_key.GetSymmetricKeyRequestBody;
-import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.common.entities.*;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequest;
+import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequestBody;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
 import java.io.IOException;
 import java.security.SecureRandom;
 
-import static kerbefake.Constants.ClientConstants.REQUEST_FAILED;
-import static kerbefake.Constants.NONCE_SIZE;
-import static kerbefake.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
-import static kerbefake.Constants.SERVER_VERSION;
-import static kerbefake.Logger.error;
-import static kerbefake.Utils.hexStringToByteArray;
+import static kerbefake.common.Constants.ClientConstants.REQUEST_FAILED;
+import static kerbefake.common.Constants.NONCE_SIZE;
+import static kerbefake.common.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
+import static kerbefake.common.Constants.SERVER_VERSION;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Utils.hexStringToByteArray;
 
 public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, GetSymmetricKeyResponse> {
 

@@ -1,21 +1,23 @@
 package kerbefake.client;
 
-import kerbefake.Constants;
+import kerbefake.common.Constants;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
 import kerbefake.client.operations.SendMessageOperation;
 import kerbefake.client.operations.SubmitTicketOperation;
-import kerbefake.errors.InvalidClientConfigException;
-import kerbefake.models.EncryptedKey;
-import kerbefake.models.Ticket;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.common.entities.EmptyResponse;
+import kerbefake.common.entities.MessageCode;
+import kerbefake.client.errors.InvalidClientConfigException;
+import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.Ticket;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
 import java.util.Arrays;
 
-import static kerbefake.Constants.ClientConstants.*;
-import static kerbefake.Constants.ID_LENGTH;
-import static kerbefake.Logger.*;
+import static kerbefake.common.Constants.ClientConstants.*;
+import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Logger.*;
 import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
 import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
 import static kerbefake.client.UserInputOutputHandler.*;
@@ -127,7 +129,7 @@ public class Client implements Runnable {
 
     /**
      * Submits a message to the message server, this involves first submitting the ticket to the message server.
-     * The server responds with an {@link kerbefake.models.EmptyResponse} but with the code {@link kerbefake.models.MessageCode#SUBMIT_TICKET_SUCCESS}.
+     * The server responds with an {@link EmptyResponse} but with the code {@link MessageCode#SUBMIT_TICKET_SUCCESS}.
      * After this the client will create a message and send it to the server.
      * In terms of handling segmentation of data, this is handled in the lower layers so we will not concern ourselves with it here.
      *

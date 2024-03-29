@@ -1,19 +1,19 @@
 package kerbefake.auth_server;
 
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.ServerMessage;
-import kerbefake.models.ServerMessageHeader;
-import kerbefake.models.MessageCode;
-import kerbefake.models.ServerRequest;
-import kerbefake.models.auth_server.responses.FailureResponse;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.entities.MessageCode;
+import kerbefake.common.entities.ServerRequest;
+import kerbefake.auth_server.entities.responses.FailureResponse;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.Logger.error;
+import static kerbefake.common.Logger.error;
 
 /**
  *

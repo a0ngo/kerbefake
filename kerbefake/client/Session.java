@@ -1,13 +1,13 @@
 package kerbefake.client;
 
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.models.Authenticator;
-import kerbefake.models.EncryptedKey;
-import kerbefake.models.Ticket;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.entities.Authenticator;
+import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.Ticket;
 
 import java.security.SecureRandom;
 
-import static kerbefake.Constants.IV_SIZE;
+import static kerbefake.common.Constants.IV_SIZE;
 
 /**
  * A class that represents a single session with a given server.

@@ -1,13 +1,12 @@
 package kerbefake.common;
 
-import kerbefake.Constants;
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageCodeException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.MessageCode;
-import kerbefake.models.ServerMessage;
-import kerbefake.models.ServerMessageBody;
-import kerbefake.models.ServerMessageHeader;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.entities.MessageCode;
+import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.entities.ServerMessageBody;
+import kerbefake.common.entities.ServerMessageHeader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,9 +14,9 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
-import static kerbefake.Constants.RESPONSE_HEADER_SIZE;
-import static kerbefake.Logger.*;
-import static kerbefake.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.common.Constants.RESPONSE_HEADER_SIZE;
+import static kerbefake.common.Logger.*;
+import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
 
 /**
  * This class is meant to wrap around the {@link java.io.InputStream} and {@link java.io.OutputStream} and provide

@@ -1,18 +1,18 @@
 package kerbefake.msg_server;
 
-import kerbefake.errors.CryptographicException;
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.*;
-import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.msg_server.requests.SubmitTicketRequest;
+import kerbefake.common.entities.*;
+import kerbefake.common.errors.CryptographicException;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.msg_server.entities.SubmitTicketRequest;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.Logger.error;
+import static kerbefake.common.Logger.error;
 
 public class MessageServerConnectionHandler implements Runnable {
 

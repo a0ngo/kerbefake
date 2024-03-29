@@ -4,7 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import static kerbefake.Constants.CLIENT_CONFIG_FILE_NAME;
+import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
 
 public class ConfigLoader {
     private Properties properties;

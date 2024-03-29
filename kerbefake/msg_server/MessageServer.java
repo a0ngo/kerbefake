@@ -10,8 +10,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Base64;
 
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.info;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.info;
 
 /**
  * A class representing a print server.

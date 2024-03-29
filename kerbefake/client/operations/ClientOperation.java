@@ -1,9 +1,9 @@
 package kerbefake.client.operations;
 
 import kerbefake.client.ClientConnection;
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.ServerMessage;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.entities.ServerMessage;
 
 import java.io.IOException;
 

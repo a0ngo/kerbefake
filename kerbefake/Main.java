@@ -1,13 +1,14 @@
 package kerbefake;
 
 import kerbefake.auth_server.AuthServer;
+import kerbefake.common.Constants;
 import kerbefake.msg_server.MessageServer;
 
 import java.io.IOException;
 import java.util.Scanner;
 
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.print;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.print;
 
 public class Main {
 

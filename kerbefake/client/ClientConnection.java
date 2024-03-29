@@ -1,14 +1,14 @@
 package kerbefake.client;
 
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.ServerMessage;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.entities.ServerMessage;
 
 import java.io.*;
 import java.net.Socket;
 
-import static kerbefake.Logger.error;
-import static kerbefake.Logger.info;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.info;
 
 /**
  * A class that represents a single connection that the client has/

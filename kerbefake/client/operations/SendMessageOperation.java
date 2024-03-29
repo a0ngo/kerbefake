@@ -2,23 +2,23 @@ package kerbefake.client.operations;
 
 import kerbefake.client.ClientConnection;
 import kerbefake.client.Session;
-import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
-import kerbefake.models.EmptyResponse;
-import kerbefake.models.MessageCode;
-import kerbefake.models.ServerMessage;
-import kerbefake.models.ServerMessageHeader;
-import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.msg_server.requests.SendMessageRequest;
-import kerbefake.models.msg_server.requests.SendMessageRequestBody;
+import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.common.entities.EmptyResponse;
+import kerbefake.common.entities.MessageCode;
+import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.msg_server.entities.SendMessageRequest;
+import kerbefake.msg_server.entities.SendMessageRequestBody;
 
 import java.io.IOException;
 
-import static kerbefake.Constants.ClientConstants.REQUEST_FAILED;
-import static kerbefake.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
-import static kerbefake.Constants.SERVER_VERSION;
-import static kerbefake.Logger.error;
-import static kerbefake.Utils.getIv;
+import static kerbefake.common.Constants.ClientConstants.REQUEST_FAILED;
+import static kerbefake.common.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
+import static kerbefake.common.Constants.SERVER_VERSION;
+import static kerbefake.common.Logger.error;
+import static kerbefake.common.Utils.getIv;
 import static kerbefake.client.UserInputOutputHandler.promptString;
 
 public class SendMessageOperation extends ClientOperation<SendMessageRequest, Boolean> {
