@@ -57,35 +57,7 @@ public final class SessionManager {
             return null;
         }
 
-        return existingSession.key.getAesKey();
+        return existingSession.getKey().getAesKey();
     }
 
-
-    private static class Session {
-
-        private EncryptedKey key;
-
-        private Ticket ticket;
-
-        public Session(EncryptedKey key, Ticket ticket) {
-            this.key = key;
-            this.ticket = ticket;
-        }
-
-        public EncryptedKey getKey() {
-            return key;
-        }
-
-        public void setKey(EncryptedKey key) {
-            this.key = key;
-        }
-
-        public Ticket getTicket() {
-            return ticket;
-        }
-
-        public void setTicket(Ticket ticket) {
-            this.ticket = ticket;
-        }
-    }
 }
