@@ -3,12 +3,19 @@ package kerbefake.client;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
 import kerbefake.errors.InvalidClientConfigException;
+import kerbefake.errors.InvalidHexStringException;
+import kerbefake.models.EncryptedKey;
+import kerbefake.models.Ticket;
+import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
 import static kerbefake.Constants.ClientConstants.*;
 import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.*;
+import static kerbefake.Utils.hexStringToByteArray;
 import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
 import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
 import static kerbefake.client.UserInputOutputHandler.*;
@@ -18,9 +25,8 @@ public class Client implements Runnable {
     private static final Scanner inputHandler = new Scanner(System.in);
     private ClientConfig clientConfig;
     private NetworkManager networkManager;
-
+    private SessionManager sessionManager;
     private ClientState clientState;
-
     private ClientAuthenticator authenticator;
 
     public Client() {
@@ -74,7 +80,7 @@ public class Client implements Runnable {
             case BEFORE_REGISTER:
                 return registerToServer();
             case AFTER_REGISTER:
-//                return getSymmetricKeyFromAuthServer();
+                return getSymmetricKeyFromAuthServer();
             case AFTER_TICKET:
 //                return sendMessageToMessageServer();
             default:
@@ -108,10 +114,45 @@ public class Client implements Runnable {
         return true;
     }
 
+    private boolean getSymmetricKeyFromAuthServer() {
+        ClientConnection authServerConn = networkManager.getConnectionForServer(NetworkManager.ServerType.AUTH);
+        String serverId = promptString("Please provide the server ID to connect to;", true);
+        do {
+            if (serverId.length() == ID_LENGTH) {
+                try {
+                    hexStringToByteArray(serverId);
+                    break;
+                } catch (InvalidHexStringException e) {
+                    error("Provided server ID is not a 32 byte hex string, please try again.");
+                }
+            } else {
+                error("Provided server ID is not a 32 byte hex string, please try again.");
+            }
+            serverId = inputHandler.next();
+        } while (true);
+
+        GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId);
+        GetSymmetricKeyResponse response = operation.perform();
+
+        EncryptedKey encKey = ((GetSymmetricKeyResponseBody) response.getBody()).getEncKey();
+        if (!encKey.decrypt(this.clientConfig.getHashedPassword())) {
+            error("Failed to decrypt encrypted key received from server.");
+            return false;
+        }
+        Ticket ticket = ((GetSymmetricKeyResponseBody) response.getBody()).getTicket();
+
+        if (!sessionManager.createNewSession(serverId, encKey, ticket)) {
+            error("Failed to store session key");
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public void run() {
         char[] password = getPasswordFromUser();
-        this.clientConfig.setPassword(password);
+        this.clientConfig.hashAndSetPassword(password);
         if (clientState == BEFORE_REGISTER) {
             this.clientConfig.setPlainTextPassword(password);
         } else {
@@ -129,22 +170,6 @@ public class Client implements Runnable {
             }
 
             performStateOperation();
-
-
-//            int choice = scanner.nextInt();
-//            switch (choice) {
-//                case 1:
-//                    clientMain.registerClient();
-//                    break;
-//                case 2:
-//                    clientMain.sendMessage();
-//                    break;
-//                case 3:
-//                    System.out.println("Exiting client.");
-//                    System.exit(0);
-//                default:
-//                    System.out.println("Invalid choice. Please select a valid option.");
-//            }
         }
     }
 
