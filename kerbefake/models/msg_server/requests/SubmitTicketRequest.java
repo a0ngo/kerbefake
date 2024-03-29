@@ -3,7 +3,6 @@ package kerbefake.models.msg_server.requests;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.EmptyResponse;
 import kerbefake.msg_server.KnownSessions;
 
 import java.nio.ByteBuffer;

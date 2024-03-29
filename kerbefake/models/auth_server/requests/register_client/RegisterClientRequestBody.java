@@ -4,7 +4,6 @@ import kerbefake.Utils;
 import kerbefake.errors.InvalidMessageCodeException;
 import kerbefake.models.ServerMessageBody;
 
-import static kerbefake.Utils.getNullTerminatedCharArrayFromByteArray;
 import static kerbefake.Utils.getNullTerminatedStringFromByteArray;
 
 public class RegisterClientRequestBody extends ServerMessageBody {

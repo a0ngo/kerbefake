@@ -7,7 +7,6 @@ import kerbefake.errors.InvalidMessageException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.*;
 

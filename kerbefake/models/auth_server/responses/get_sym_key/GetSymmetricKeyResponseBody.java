@@ -1,11 +1,9 @@
 package kerbefake.models.auth_server.responses.get_sym_key;
 
 import kerbefake.errors.InvalidHexStringException;
-import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.EncryptedKey;
-import kerbefake.models.EncryptedServerMessageBody;
-import kerbefake.models.Ticket;
 import kerbefake.models.ServerMessageBody;
+import kerbefake.models.Ticket;
 
 import static kerbefake.Utils.*;
 

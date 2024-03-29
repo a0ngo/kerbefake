@@ -2,12 +2,10 @@ package kerbefake.client.operations;
 
 import kerbefake.client.ClientConnection;
 import kerbefake.client.Session;
-import kerbefake.client.SessionManager;
 import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 import kerbefake.models.*;
 import kerbefake.models.auth_server.responses.FailureResponse;
-import kerbefake.models.auth_server.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.models.msg_server.requests.SubmitTicketRequest;
 import kerbefake.models.msg_server.requests.SubmitTicketRequestBody;
 

@@ -2,7 +2,6 @@ package kerbefake.models.auth_server;
 
 import kerbefake.errors.InvalidClientDataException;
 
-import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Base64;

@@ -4,8 +4,6 @@ import kerbefake.Utils;
 import kerbefake.errors.InvalidHexStringException;
 import kerbefake.errors.InvalidMessageException;
 
-import java.nio.charset.StandardCharsets;
-
 import static kerbefake.Constants.ID_LENGTH;
 import static kerbefake.Logger.error;
 import static kerbefake.Logger.info;

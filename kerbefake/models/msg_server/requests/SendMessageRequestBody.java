@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import static com.sun.org.apache.xalan.internal.xsltc.compiler.sym.error;
 import static kerbefake.Logger.error;
 import static kerbefake.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.Utils.byteArrayToLEByteBuffer;

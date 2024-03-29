@@ -2,14 +2,7 @@ package kerbefake.models.auth_server;
 
 import kerbefake.errors.InvalidMessageServerDataException;
 
-import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Base64;
-import java.util.Objects;
-
-import static kerbefake.Logger.error;
 
 public class MessageServerEntry {
 
