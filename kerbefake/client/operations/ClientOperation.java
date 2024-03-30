@@ -8,6 +8,7 @@ import kerbefake.common.errors.InvalidMessageException;
 import java.io.IOException;
 
 import static kerbefake.common.Constants.ClientConstants.REQUEST_FAILED;
+import static kerbefake.common.Constants.ResponseCodes.REGISTER_CLIENT_FAILURE_CODE;
 import static kerbefake.common.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
 import static kerbefake.common.Logger.error;
 
@@ -26,9 +27,12 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
 
     private final Class<RES> responseClass;
 
-    protected ClientOperation(ClientConnection connection, Class<RES> responseClass) {
+    protected final String clientId;
+
+    protected ClientOperation(ClientConnection connection, Class<RES> responseClass, String clientId) {
         this.conn = connection;
         this.responseClass = responseClass;
+        this.clientId = clientId;
     }
 
     /**
@@ -60,17 +64,23 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
             }
 
             ServerMessage response = conn.send(request);
-            if (response == null) { // Some failure happened when we received the response for the request thus we return null.
+            if (response == null) { // Some failure happened when we received the response for the request thus we return null
                 return null;
             }
 
             if (response instanceof FailureResponse) {
-                if (response.getHeader().getMessageCode().getCode() == UNKNOWN_FAILURE_CODE) {
-                    error(REQUEST_FAILED);
-                    return null;
+                short responseCode = response.getHeader().getMessageCode().getCode();
+                switch (responseCode) {
+                    case UNKNOWN_FAILURE_CODE:
+                        error(REQUEST_FAILED);
+                        return null;
+                    case REGISTER_CLIENT_FAILURE_CODE:
+                        error("Client registration failed on server.");
+                        return null;
+                    default:
+                        error("Received unknown response code: %d - can't proceed.", response.getHeader().getMessageCode().getCode());
+                        return null;
                 }
-                error("Received unknown response code: %d - can't proceed.", response.getHeader().getMessageCode().getCode());
-                return null;
             }
 
             RES properResponse;
