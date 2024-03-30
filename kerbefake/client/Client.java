@@ -1,26 +1,25 @@
 package kerbefake.client;
 
-import kerbefake.common.Constants;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
 import kerbefake.client.operations.SendMessageOperation;
 import kerbefake.client.operations.SubmitTicketOperation;
+import kerbefake.common.Constants;
 import kerbefake.common.entities.EmptyResponse;
-import kerbefake.common.entities.MessageCode;
-import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.Ticket;
-import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
 import java.util.Arrays;
 
+import static kerbefake.client.Client.ClientState.*;
+import static kerbefake.client.UserInputOutputHandler.*;
 import static kerbefake.common.Constants.ClientConstants.*;
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Logger.*;
-import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
-import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
-import static kerbefake.client.UserInputOutputHandler.*;
 
 public class Client implements Runnable {
 
@@ -34,8 +33,8 @@ public class Client implements Runnable {
             clientConfig = ClientConfig.load();
             clientState = AFTER_REGISTER;
         } catch (InvalidClientConfigException e) {
-            if (e.getMessage() != null && !e.getMessage().isEmpty()) {
-                e.printStackTrace();
+            if (e.getMessage() != null && !e.getMessage().equals(new InvalidClientConfigException().getMessage())) {
+                error(e);
                 error("Client configuration is invalid due to: %s", e.getMessage());
                 System.exit(1);
                 return;
@@ -81,7 +80,7 @@ public class Client implements Runnable {
             case BEFORE_REGISTER:
                 return registerToServer();
             case AFTER_REGISTER:
-                return getSymmetricKeyFromAuthServer();
+                return connectToMessageServer();
             case AFTER_TICKET:
                 return sendMessageToMessageServer();
             default:
@@ -105,11 +104,11 @@ public class Client implements Runnable {
         return true;
     }
 
-    private boolean getSymmetricKeyFromAuthServer() {
+    private boolean connectToMessageServer() {
         ClientConnection authServerConn = networkManager.getConnectionForServer(NetworkManager.ServerType.AUTH);
         String serverId = getServerId();
 
-        GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId);
+        GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId, this.clientConfig.getClientIdHex());
         GetSymmetricKeyResponse response = operation.perform();
 
         EncryptedKey encKey = ((GetSymmetricKeyResponseBody) response.getBody()).getEncKey();
@@ -124,8 +123,13 @@ public class Client implements Runnable {
             return false;
         }
 
-        return true;
+        Session session = sessionManager.getSession(serverId);
+
+        ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+
+        return new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
     }
+
 
     /**
      * Submits a message to the message server, this involves first submitting the ticket to the message server.
@@ -136,18 +140,11 @@ public class Client implements Runnable {
      * @return - true if successful, false otherwise
      */
     private boolean sendMessageToMessageServer() {
-        // Within 5 minute before this connection will be closed automatically
         ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
         String serverId = getServerId();
         Session session = sessionManager.getSession(serverId);
 
-        boolean ticketSubmitSuccessful = new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
-        if (!ticketSubmitSuccessful) {
-            error("Failed to submit ticket to message server");
-            return false;
-        }
-
-        boolean sendMessageSuccessful = new SendMessageOperation(msgServerConn, session).perform();
+        boolean sendMessageSuccessful = new SendMessageOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
 
         if (!sendMessageSuccessful) {
             error("Failed to send message to the message server");
@@ -178,7 +175,11 @@ public class Client implements Runnable {
 
             if (!performStateOperation()) {
                 error("Failed to perform requested operation.");
+                continue;
             }
+
+            info("Successfully performed operation");
+            clientState = clientState == BEFORE_REGISTER ? AFTER_REGISTER : AFTER_TICKET;
         }
     }
 
