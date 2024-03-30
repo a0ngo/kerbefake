@@ -96,6 +96,10 @@ public class Client implements Runnable {
     private boolean registerToServer() {
         // Within 5 minute before this connection will be closed automatically
         ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
+        if (authServerConn == null) {
+            clientLogger.error("Failed to open connection to auth server, please check you provided the correct IP and port.");
+            return false;
+        }
         String name = getNameFromUser();
         String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword()).perform();
         if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
@@ -122,6 +126,11 @@ public class Client implements Runnable {
         if (authServerConn == null) {
             authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, DEFAULT_AUTH_SERVER_IP, DEFAULT_AUTH_SERVER_PORT);
         }
+
+        if (authServerConn == null) {
+            clientLogger.error("Failed to connect to the authentication server, please check you used the correct IP and port.");
+            return false;
+        }
         String serverId = getServerId();
 
         GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId, this.clientConfig.getClientIdHex());
@@ -144,7 +153,10 @@ public class Client implements Runnable {
         Session session = sessionManager.getSession(serverId);
 
         ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
-
+        if (msgServerConn == null) {
+            clientLogger.error("Failed to open connection to message server, please check you provided the correct IP and port.");
+            return false;
+        }
         return new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
     }
 
@@ -159,6 +171,10 @@ public class Client implements Runnable {
      */
     private boolean sendMessageToMessageServer() {
         ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+        if (msgServerConn == null) {
+            clientLogger.error("Failed to open connection to message server, please check you provided the correct IP and port.");
+            return false;
+        }
         String serverId = getServerId();
         Session session = sessionManager.getSession(serverId);
 
