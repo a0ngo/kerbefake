@@ -6,6 +6,7 @@ import kerbefake.common.Constants;
 import kerbefake.msg_server.MessageServer;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import static kerbefake.common.Logger.commonLogger;
@@ -14,6 +15,14 @@ public class Main {
 
     public static void main(String[] args) {
         int modeSelection;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            for (Thread t : Thread.getAllStackTraces().keySet()) {
+                String name = t.getName();
+                if (name.equals("AuthServerThread") || name.equals("MessageServerThread"))
+                    t.interrupt();
+            }
+
+        }));
 
         Thread authServerThread = null, msgServerThread = null;
         Scanner userInputScanner = new Scanner(System.in);
@@ -32,6 +41,7 @@ public class Main {
                         }
                         AuthServer authServer = new AuthServer();
                         authServerThread = new Thread(authServer::start);
+                        authServerThread.setName("AuthServerThread");
                         authServerThread.start();
                         break;
                     case Constants.MODE_SERVER:
@@ -42,6 +52,7 @@ public class Main {
                         try {
                             MessageServer msgServer = new MessageServer();
                             msgServerThread = new Thread(msgServer::start);
+                            msgServerThread.setName("MessageServerThread");
                             msgServerThread.start();
                         } catch (IOException e) {
                             commonLogger.error("Failed to start message server due to: %s", e);
@@ -53,6 +64,9 @@ public class Main {
                         return;
                 }
             } while (true);
+        } catch (NoSuchElementException e) {
+            // We caught a CTRL + C, ignore and let threads terminate
+            commonLogger.info("CTRL+C Detected, exiting");
         } finally {
             if (authServerThread != null)
                 authServerThread.interrupt();
