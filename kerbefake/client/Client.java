@@ -13,6 +13,7 @@ import kerbefake.common.entities.EncryptedKey;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.Ticket;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import static kerbefake.client.Client.ClientState.*;
@@ -101,6 +102,14 @@ public class Client implements Runnable {
 
         this.clientConfig.setClientIdHex(clientId);
         this.clientConfig.clearPassword();
+        try {
+            this.clientConfig.storeToFile();
+        } catch (IOException e) {
+            error(e);
+            error("Failed to store client config in file due to: %s", e.getMessage());
+            // We won't know what the client ID is therefore we can't proceed and consider the operation as failed.
+            return false;
+        }
         return true;
     }
 

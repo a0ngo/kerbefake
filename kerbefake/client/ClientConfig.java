@@ -4,10 +4,9 @@ import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.common.Constants;
 import kerbefake.common.CryptoUtils;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
@@ -60,7 +59,7 @@ public final class ClientConfig {
         try {
             this.passwordHash = CryptoUtils.performSha256(password);
         } catch (NoSuchAlgorithmException e) {
-             error(e);
+            error(e);
             error("This machine does not support SHA-256, can't proceed, exiting.");
             System.exit(1);
         }
@@ -127,4 +126,17 @@ public final class ClientConfig {
     }
 
 
+    public void storeToFile() throws IOException {
+        if (!Files.exists(Paths.get(CLIENT_CONFIG_FILE_NAME))) {
+            BufferedWriter fileWriter = new BufferedWriter(new FileWriter(CLIENT_CONFIG_FILE_NAME));
+            fileWriter.write(this.name + "\n");
+            fileWriter.write(this.clientIdHex);
+            fileWriter.flush();
+            fileWriter.close();
+            return;
+        }
+
+        warn("Tried to store client config in file but file already exists, not storing.");
+
+    }
 }
