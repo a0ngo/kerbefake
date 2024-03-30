@@ -21,7 +21,8 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
     private final char[] plaintextPassword;
 
     public RegisterOperation(ClientConnection connection, char[] plaintextPassword) {
-        super(connection, RegisterClientResponse.class);
+        // Register doesn't need a client ID
+        super(connection, RegisterClientResponse.class, null);
         this.plaintextPassword = plaintextPassword;
     }
 
@@ -29,9 +30,7 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
     protected RegisterClientRequest generateRequest() throws InvalidMessageException {
         String name = getNameFromUser();
 
-        RegisterClientRequest request = RegisterClientRequestFactory.getInstance().setName(name).setPassword(plaintextPassword).build();
-        Arrays.fill(plaintextPassword, (char) 0);
-        return request;
+        return RegisterClientRequestFactory.getInstance().setName(name).setPassword(plaintextPassword).build();
     }
 
     @Override

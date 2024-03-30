@@ -18,8 +18,8 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
 
     private final String serverId;
 
-    public GetSymKeyOperation(ClientConnection connection, String serverId) {
-        super(connection, GetSymmetricKeyResponse.class);
+    public GetSymKeyOperation(ClientConnection connection, String serverId, String clientId) {
+        super(connection, GetSymmetricKeyResponse.class, clientId);
         this.serverId = serverId;
     }
 
@@ -31,7 +31,7 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
 
         byte[] nonce = getSecureRandomBytes(NONCE_SIZE);
 
-        return CreateSymmetricKeyRequestFactory.getInstance().setNonce(nonce).setServerId(serverId).build();
+        return CreateSymmetricKeyRequestFactory.getInstance().setNonce(nonce).setServerId(serverId).setClientId(clientId).build();
     }
 
     @Override

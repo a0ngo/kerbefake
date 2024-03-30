@@ -13,8 +13,8 @@ public class SendMessageOperation extends ClientOperation<SendMessageRequest, Em
 
     private final Session session;
 
-    public SendMessageOperation(ClientConnection connection, Session session) {
-        super(connection, EmptyResponse.class);
+    public SendMessageOperation(ClientConnection connection, Session session, String clientId) {
+        super(connection, EmptyResponse.class, clientId);
         this.session = session;
     }
 
@@ -22,11 +22,11 @@ public class SendMessageOperation extends ClientOperation<SendMessageRequest, Em
     protected SendMessageRequest generateRequest() throws InvalidMessageException {
         String message = promptString("Please provide the message to send to the server", true);
 
-        return SendMessageRequestFactory.getInstance().setMessage(message).encrypt(session.getSessionKey()).build();
+        return SendMessageRequestFactory.getInstance().setMessage(message).encrypt(session.getSessionKey()).setClientId(clientId).build();
     }
 
     @Override
     protected Boolean validateResponse(EmptyResponse response) {
-        return response == null;
+        return response != null;
     }
 }

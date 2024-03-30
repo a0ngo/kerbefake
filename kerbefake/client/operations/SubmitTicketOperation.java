@@ -11,17 +11,14 @@ public final class SubmitTicketOperation extends ClientOperation<SubmitTicketReq
 
     private final Session session;
 
-    private final String clientId;
-
     public SubmitTicketOperation(ClientConnection connection, Session session, String clientId) {
-        super(connection, EmptyResponse.class);
+        super(connection, EmptyResponse.class, clientId);
         this.session = session;
-        this.clientId = clientId;
     }
 
     @Override
     protected SubmitTicketRequest generateRequest() throws InvalidMessageException {
-        return SubmitTicketRequestFactory.getInstance().setTicket(session.getTicket()).setAuthenticator(this.session.createAuthenticator(clientId)).encrypt(session.getSessionKey()).build();
+        return SubmitTicketRequestFactory.getInstance().setTicket(session.getTicket()).setAuthenticator(this.session.createAuthenticator(clientId)).encrypt(session.getSessionKey()).setClientId(clientId).build();
     }
 
     @Override
