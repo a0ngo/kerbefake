@@ -15,6 +15,11 @@ public final class UserInputOutputHandler {
     private static final Scanner inputHandler = new Scanner(System.in);
 
     /**
+     * A single server ID since we only support a single one
+     */
+    private static final String SERVER_ID = "21da1d0e32944e64944c6f864aa6b7b4";
+
+    /**
      * For UX, suggest last server ID used.
      */
     private static String lastServerIdProvided = null;
@@ -155,6 +160,11 @@ public final class UserInputOutputHandler {
      * @return the server ID provided by the user
      */
     public static String getServerId() {
+        //noinspection ConstantValue
+        if (SERVER_ID != null) {
+            clientLogger.info("Using preconfigured server ID since we only support a single server, to change it change the third line in msg.info and the value of SERVER_ID to both be the same 32 character hex string.");
+            return SERVER_ID;
+        }
         if (lastServerIdProvided != null) {
             boolean reuse = promptBoolean(String.format("Would you like to use the latest server ID provided (%s)?", lastServerIdProvided));
             if (reuse)
