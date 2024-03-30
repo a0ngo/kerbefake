@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="kerbefake:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/kerbefake_jar</output-path>
+    <root id="archive" name="kerbefake.jar">
+      <element id="module-output" name="kerbefake" />
+    </root>
+  </artifact>
+</component>
