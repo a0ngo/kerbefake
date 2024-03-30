@@ -29,6 +29,12 @@ public class SendMessageRequestBody extends EncryptedServerMessageBody {
         this.message = message;
     }
 
+    public SendMessageRequestBody(int messageSize, byte[] iv, byte[] encryptedData) {
+        this.messageSize = messageSize;
+        this.iv = iv;
+        this.encryptedData = encryptedData;
+    }
+
     @Override
     public boolean encrypt(byte[] key) {
         if (!assertNonZeroedByteArrayOfLengthN(this.iv, 16)) {
