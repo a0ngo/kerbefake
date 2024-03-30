@@ -4,17 +4,15 @@ import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.common.Constants;
 import kerbefake.common.CryptoUtils;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
-import static kerbefake.common.Constants.ID_LENGTH;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.warn;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 
 public final class ClientConfig {
 
@@ -60,8 +58,8 @@ public final class ClientConfig {
         try {
             this.passwordHash = CryptoUtils.performSha256(password);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            error("This machine does not support SHA-256, can't proceed, exiting.");
+            clientLogger.error(e);
+            clientLogger.error("This machine does not support SHA-256, can't proceed, exiting.");
             System.exit(1);
         }
     }
@@ -87,17 +85,22 @@ public final class ClientConfig {
             try {
                 String additionalRead = input.readLine();
                 if (additionalRead != null && !additionalRead.isEmpty()) {
-                    warn("Client configuration has more than 2 lines, trying to use the first two lines. Please remove empty lines from file.");
+                    clientLogger.warn("Client configuration has more than 2 lines, trying to use the first two lines. Please remove empty lines from file.");
                 }
             } catch (IOException e) {
                 // Ignoring since we expect only two lines
+            }
+
+            if (name == null && clientId == null) {
+                clientLogger.warn("Client configuration file exists but is empty, please remove it.");
+                throw new InvalidClientConfigException();
             }
 
             if (name == null || name.isEmpty()) {
                 throw new InvalidClientConfigException("Missing user name, it cannot be empty");
             }
 
-            if (clientId == null || clientId.length() != ID_LENGTH) {
+            if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
                 throw new InvalidClientConfigException("Missing user client ID, must be 32 hex characters");
             }
 
@@ -105,7 +108,7 @@ public final class ClientConfig {
         } catch (FileNotFoundException e) {
             throw new InvalidClientConfigException();
         } catch (IOException e) {
-            e.printStackTrace();
+            clientLogger.error(e);
             throw new InvalidClientConfigException(String.format("Failed to read client configuration due to: %s", e.getMessage()));
         }
     }
@@ -120,9 +123,27 @@ public final class ClientConfig {
     }
 
     public void clearPassword() {
+        if (password == null) return;
         Arrays.fill(password, (char) 0);
         password = null;
     }
 
 
+    public void storeToFile() throws IOException {
+        boolean canWrite = !Files.exists(Paths.get(CLIENT_CONFIG_FILE_NAME));
+        if (!canWrite) {
+            BufferedReader reader = new BufferedReader(new FileReader(CLIENT_CONFIG_FILE_NAME));
+            canWrite = reader.readLine() == null;
+        }
+        if (canWrite) {
+            BufferedWriter fileWriter = new BufferedWriter(new FileWriter(CLIENT_CONFIG_FILE_NAME));
+            fileWriter.write(this.name + "\n");
+            fileWriter.write(this.clientIdHex);
+            fileWriter.flush();
+            fileWriter.close();
+            return;
+        }
+
+        clientLogger.warn("Tried to store client config in file but file already exists, not storing.");
+    }
 }

@@ -1,107 +1,28 @@
 package kerbefake.auth_server;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
-import kerbefake.common.entities.ServerMessage;
-import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.ConnectionHandler;
 import kerbefake.common.entities.MessageCode;
+import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerRequest;
-import kerbefake.auth_server.entities.responses.FailureResponse;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.auth_server.AuthServer.authLogger;
 
 /**
- *
+ * A connection handler that handles requests for the auth server.
  */
-public class AuthServerConnectionHandler implements Runnable {
-
-    private Socket conn;
-
-    private Thread parentThread;
+public class AuthServerConnectionHandler extends ConnectionHandler {
 
     public AuthServerConnectionHandler(Socket conn, Thread parentThread) {
-        assert conn != null;
-        this.conn = conn;
-        this.parentThread = parentThread;
+        super(conn, parentThread, authLogger, new MessageCode[]{
+                MessageCode.REGISTER_CLIENT,
+                MessageCode.REQUEST_SYMMETRIC_KEY
+        });
     }
 
     @Override
-    public void run() {
-        BufferedInputStream in;
-        BufferedOutputStream out;
-        try {
-            in = new BufferedInputStream(conn.getInputStream());
-            out = new BufferedOutputStream(conn.getOutputStream());
-        } catch (IOException e) {
-            error("Failed to created stream reader and writer: %s", e);
-            return;
-        }
-
-        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte) 4, MessageCode.UNKNOWN_FAILURE, 0));
-        while (!parentThread.isInterrupted()) {
-            try {
-                ServerMessage message = ServerMessage.parse(in);
-                if (message == null) {
-                    continue;
-                }
-                if (!message.getHeader().getMessageCode().isForAuthServer()) {
-                    out.write(unknownFailure.toLEByteArray());
-                    continue;
-                }
-
-                // On this specific class we always know that we expect messages that are requests, if there's an issue we simply close the connection;
-                // Because we do actually allow the parsing of a response message here.
-                // This is why we hvae a catch for classcastexception below.
-                ServerRequest req = (ServerRequest) message;
-                ServerMessage res = req.execute();
-
-                out.write(res.toLEByteArray());
-                out.flush();
-
-
-            } catch (InvalidMessageException | ClassCastException e) {
-                // This is just an invalid message, or one we don't know how to handle - ignore and close connection.
-                e.printStackTrace();
-                error("Failed to parse message due to: %s", e);
-                try {
-                    out.write(unknownFailure.toLEByteArray());
-                    out.flush();
-                    break;
-                } catch (IOException | InvalidHexStringException ex) {
-                    error("Failed to write failure response: %s", e);
-                    break;
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                error("Failed to send response due to: %s - terminating the connection", e);
-                break;
-
-            } catch (Exception e) {
-                error("Failed to send response due to: %s", e);
-                try {
-                    out.write(unknownFailure.toLEByteArray());
-                    out.flush();
-                } catch (IOException | InvalidHexStringException ex) {
-                    e.printStackTrace();
-                    // Hopefully this will be fixed later one.
-                }
-                break;
-            }
-        }
-
-        try {
-            conn.close();
-        } catch (IOException e) {
-            error("Failed to close socket due to: %s", e);
-            throw new RuntimeException(e);
-        }
+    public <T extends ServerMessage & ServerRequest> T processMessageBeforeExecution(T message) {
+        return message;
     }
-
-
 }

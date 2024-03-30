@@ -1,6 +1,6 @@
 package kerbefake.common.entities;
 
-import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
 
 /**
  * An abstract class representing a request to the authentication server
@@ -12,5 +12,5 @@ public interface ServerRequest {
      *
      * @return a response (in the form of an AuthServerMessage) or {@link kerbefake.auth_server.entities.responses.FailureResponse} in case of a failure.
      */
-    ServerMessage execute() throws InvalidHexStringException;
+    ServerMessage execute() throws InvalidMessageException;
 }

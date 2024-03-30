@@ -4,7 +4,7 @@ import kerbefake.common.CryptoUtils;
 import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Constants.NONCE_SIZE;
-import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.commonLogger;
 import static kerbefake.common.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
 
@@ -61,14 +61,14 @@ public class EncryptedKey extends EncryptedServerMessageBody {
             return false;
         }
         if (this.nonce == null || this.aesKey == null || this.nonce.length != 8 || this.aesKey.length != 32) {
-            error("Missing nonce or aes key for encryption.");
+            commonLogger.error("Missing nonce or aes key for encryption.");
             return false;
         }
 
         boolean nonceZeroed = true;
         for (byte b : this.nonce) nonceZeroed &= (b == 0);
         if (nonceZeroed) {
-            error("Nonce is zeroed can't proceed");
+            commonLogger.error("Nonce is zeroed can't proceed");
             return false;
         }
 

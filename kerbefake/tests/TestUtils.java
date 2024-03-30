@@ -6,7 +6,7 @@ import kerbefake.msg_server.MessageServer;
 import java.io.IOException;
 import java.util.Random;
 
-import static kerbefake.common.Logger.info;
+import static kerbefake.tests.Tests.testLogger;
 
 /**
  * General utilities for testing purposes.
@@ -18,7 +18,7 @@ final class TestUtils {
         Thread t = new Thread(server::start);
         t.start();
         try {
-            info("Sleeping for 3 seconds to ensure server startup.");
+            testLogger.info("Sleeping for 3 seconds to ensure server startup.");
             Thread.sleep(3 * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -31,7 +31,7 @@ final class TestUtils {
         Thread t = new Thread(server::start);
         t.start();
         try{
-            info("Sleeping for 3 seconds to ensurer server startup.");
+            testLogger.info("Sleeping for 3 seconds to ensurer server startup.");
             Thread.sleep(3 * 1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

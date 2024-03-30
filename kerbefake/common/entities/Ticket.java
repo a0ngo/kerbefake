@@ -1,12 +1,10 @@
 package kerbefake.common.entities;
 
 import kerbefake.common.CryptoUtils;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
 
-import static kerbefake.common.Constants.ID_LENGTH;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
+import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.*;
 
 public class Ticket extends EncryptedServerMessageBody {
@@ -82,7 +80,7 @@ public class Ticket extends EncryptedServerMessageBody {
 
             byte[] decryptedData = CryptoUtils.decrypt(key, this.ticketIv, this.encryptedData);
             if (decryptedData.length != DATA_DECRYPTED_SIZE) {
-                error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
+                commonLogger.error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
                 return false;
             }
 
@@ -103,12 +101,12 @@ public class Ticket extends EncryptedServerMessageBody {
             return false;
         }
         if (this.expTime == null || this.aesKey == null || this.expTime.length != 8 || this.aesKey.length != 32) {
-            error("Missing exp time or aes key for encryption.");
+            commonLogger.error("Missing exp time or aes key for encryption.");
             return false;
         }
 
         if (!assertNonZeroedByteArrayOfLengthN(this.expTime, 8)) {
-            error("Expiration time is zeroed out");
+            commonLogger.error("Expiration time is zeroed out");
             return false;
         }
         try {
@@ -117,7 +115,6 @@ public class Ticket extends EncryptedServerMessageBody {
             System.arraycopy(expTime, 0, dataToEncrypt, 32, 8);
 
             this.encryptedData = CryptoUtils.encrypt(key, this.ticketIv, dataToEncrypt);
-            info("TEST - Decrypted data: %s, Encrypted: %s", bytesToHexString(dataToEncrypt), bytesToHexString(encryptedData));
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -149,11 +146,11 @@ public class Ticket extends EncryptedServerMessageBody {
     }
 
 
-    public byte[] toLEByteArray() throws InvalidHexStringException {
-        if (clientId == null || clientId.length() != ID_LENGTH) {
+    public byte[] toLEByteArray() throws InvalidMessageException {
+        if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             throw new RuntimeException("Client id is missing or invalid");
         }
-        if (serverId == null || serverId.length() != ID_LENGTH) {
+        if (serverId == null || serverId.length() != ID_HEX_LENGTH_CHARS) {
             throw new RuntimeException("Server id is missing or invalid");
         }
         if (creationTime == null || creationTime.length != 8) {
@@ -168,7 +165,13 @@ public class Ticket extends EncryptedServerMessageBody {
         }
 
         byte[] clientIdBytes = hexStringToByteArray(clientId);
+        if (clientIdBytes == null) {
+            throw new InvalidMessageException("Client ID is not a hex string.");
+        }
         byte[] serverIdBytes = hexStringToByteArray(serverId);
+        if (serverIdBytes == null) {
+            throw new InvalidMessageException("Server ID is not a hex string.");
+        }
         int objectSize = clientIdBytes.length + serverIdBytes.length + 1 /*Version*/ + creationTime.length + 16 /*IV*/ + this.encryptedData.length;
         byte[] byteArr = new byte[objectSize];
         byteArr[0] = version;

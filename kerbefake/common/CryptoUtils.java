@@ -7,7 +7,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.commonLogger;
 
 /**
  * A class containing cryptographic utility functions
@@ -58,7 +58,7 @@ public final class CryptoUtils {
             return cipher.doFinal(value);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
                  InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
-            error("Failed to perform crypto operation, this can be because this PC does not support the needed ciphers (AES/CBC/PKCS5Padding) or that the wrong key was used for decryption");
+            commonLogger.errorToFileOnly("Failed to perform crypto operation, this can be because this PC does not support the needed ciphers (AES/CBC/PKCS5Padding) or that the wrong key was used for decryption");
             throw new CryptographicException(e);
         }
     }

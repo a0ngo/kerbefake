@@ -1,12 +1,10 @@
 package kerbefake.client;
 
-import kerbefake.common.errors.InvalidHexStringException;
-
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import static kerbefake.common.Constants.ID_LENGTH;
-import static kerbefake.common.Logger.*;
+import static kerbefake.client.Client.clientLogger;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Utils.hexStringToByteArray;
 
 /**
@@ -17,13 +15,18 @@ public final class UserInputOutputHandler {
     private static final Scanner inputHandler = new Scanner(System.in);
 
     /**
+     * A single server ID since we only support a single one
+     */
+    private static final String SERVER_ID = "21da1d0e32944e64944c6f864aa6b7b4";
+
+    /**
      * For UX, suggest last server ID used.
      */
     private static String lastServerIdProvided = null;
 
 
     /**
-     * A regex for IP - https://stackoverflow.com/a/36760050
+     * A regex for IP - <a href="https://stackoverflow.com/a/36760050">StackOverflow answer</a>
      */
     private static final String IP_REGEX = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
 
@@ -41,12 +44,26 @@ public final class UserInputOutputHandler {
      */
     public static String promptString(String message, boolean notEmpty) {
         String response = (String) prompt(message, String.class);
-        while (!notEmpty && (response == null || response.isEmpty())) {
-            error("Please provide a non-empty string.");
+        while (notEmpty && (response == null || response.isEmpty())) {
+            clientLogger.error("Please provide a non-empty string.");
             response = inputHandler.next();
         }
 
         return response;
+    }
+
+    /**
+     * When needing a long string scanner.next() will stop at a space, need another method to get a long string with space and other characters.
+     *
+     * @param message - the message to display to the user.
+     * @return the string provided by the user.
+     */
+    public static String promptLongString(String message) {
+        clientLogger.info(message);
+        System.out.print("> ");
+        String firstPart = inputHandler.next();
+        String rest = inputHandler.nextLine();
+        return firstPart + " " + rest;
     }
 
     /**
@@ -61,11 +78,11 @@ public final class UserInputOutputHandler {
 
         int response = (int) prompt(message, Integer.class);
         if (startRange > endRange) {
-            warn("Range provided is invalid (%d - %d), returning user response", startRange, endRange);
+            clientLogger.warn("Range provided is invalid (%d - %d), returning user response", startRange, endRange);
             return response;
         }
         while ((startRange != -1 && endRange != -1) && (response < startRange || response > endRange)) {
-            error("Please provide an integer between %d and %d", startRange, endRange);
+            clientLogger.error("Please provide an integer between %d and %d", startRange, endRange);
             response = inputHandler.nextInt();
         }
 
@@ -101,7 +118,7 @@ public final class UserInputOutputHandler {
             return false;
         } else {
             if (!valueType.equals(String.class))
-                error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
+                clientLogger.error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
             return inputHandler.next();
         }
     }
@@ -110,8 +127,10 @@ public final class UserInputOutputHandler {
      * Gets the password from the user and immediately hashes it. The value is stored only if we're in the pre-register state
      * in which case we need it for the registration operation.
      */
-    public static char[] getPasswordFromUser(){
-        return promptString("Please provide your password;",false).toCharArray();
+    public static char[] getPasswordFromUser() {
+        clientLogger.info("Please provide your password (%s);", System.console() == null ? "Note that we can't obscure the password" : "It will not appear on screen");
+        System.out.print("> ");
+        return System.console() == null ? inputHandler.next().toCharArray() : System.console().readPassword();
     }
 
     public static String getNameFromUser() {
@@ -130,8 +149,8 @@ public final class UserInputOutputHandler {
         // This do-while loop is meant to properly parse a provided IP:Port address provided by the user, if none is provided the above
         // is kept as default.
         do {
-            String serverString = promptString(String.format("Please provide the %s server address (leave empty for %s)", serverType, defaultAddress), false);
-            if (serverString != null && !serverString.isEmpty()) {
+            String serverString = promptString(String.format("Please provide the %s server address (enter 0 for %s)", serverType, defaultAddress), false);
+            if (serverString != null && !serverString.equals("0")) {
                 if (serverString.matches(IP_REGEX)) {
                     int port = promptInt("Server provided without port, please provide the port used.", 1, 65535);
                     return String.format("%s:%d", serverString, port);
@@ -149,9 +168,14 @@ public final class UserInputOutputHandler {
     /**
      * Gets the server ID the user wants to communicate with
      *
-     * @return
+     * @return the server ID provided by the user
      */
     public static String getServerId() {
+        //noinspection ConstantValue
+        if (SERVER_ID != null) {
+            clientLogger.info("Using preconfigured server ID since we only support a single server, to change it change the third line in msg.info and the value of SERVER_ID to both be the same 32 character hex string.");
+            return SERVER_ID;
+        }
         if (lastServerIdProvided != null) {
             boolean reuse = promptBoolean(String.format("Would you like to use the latest server ID provided (%s)?", lastServerIdProvided));
             if (reuse)
@@ -159,18 +183,17 @@ public final class UserInputOutputHandler {
         }
         String serverId = promptString("Please provide the server ID to connect to;", true);
         do {
-            if (serverId.length() == ID_LENGTH) {
-                try {
-                    hexStringToByteArray(serverId);
+            if (serverId.length() == ID_HEX_LENGTH_CHARS) {
+                if (hexStringToByteArray(serverId) == null)
+                    clientLogger.error("Provided server ID is not a 32 byte hex string, please try again.");
+                else
                     break;
-                } catch (InvalidHexStringException e) {
-                    error("Provided server ID is not a 32 byte hex string, please try again.");
-                }
             } else {
-                error("Provided server ID is not a 32 byte hex string, please try again.");
+                clientLogger.error("Provided server ID is not a 32 byte hex string, please try again.");
             }
             serverId = inputHandler.next();
         } while (true);
+        lastServerIdProvided = serverId;
         return serverId;
     }
 

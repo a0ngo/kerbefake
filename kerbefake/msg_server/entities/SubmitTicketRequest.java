@@ -1,15 +1,14 @@
 package kerbefake.msg_server.entities;
 
+import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidMessageException;
-import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.msg_server.KnownSessions;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.msg_server.MessageServer.msgLogger;
 
 public class SubmitTicketRequest extends EncryptedServerMessage implements ServerRequest {
 
@@ -23,7 +22,7 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         FailureResponse failedResponse = new FailureResponse(this.header.toResponseHeader(MessageCode.UNKNOWN_FAILURE, 0));
 
         if (this.body == null) {
-            error("No body provided for submit ticket request.");
+            msgLogger.error("No body provided for submit ticket request.");
             return failedResponse;
         }
 
@@ -32,13 +31,14 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         SubmitTicketRequestBody body = (SubmitTicketRequestBody) this.body;
         Ticket ticket = body.getTicket();
         if (ticket.isEncrypted()) {
-            error("Ticket was not decrypted ahead of execution, ignoring.");
+            msgLogger.error("Ticket was not decrypted ahead of execution, ignoring.");
             return failedResponse;
         }
 
         long expTime = ByteBuffer.wrap(ticket.getExpTime()).order(ByteOrder.LITTLE_ENDIAN).getLong();
-        info("Ticket expired, current time: %d, exp time: %d", System.currentTimeMillis(), expTime);
+        msgLogger.info("Ticket timestamp, current time: %d, exp time: %d", System.currentTimeMillis(), expTime);
         if (System.currentTimeMillis() >= expTime) {
+            msgLogger.error("Ticket expired");
             return failedResponse;
         }
 
@@ -69,12 +69,12 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         }
         SubmitTicketRequestBody body = (SubmitTicketRequestBody) this.body;
         if (!body.getTicket().decrypt(key)) {
-            throw new RuntimeException("Unable to encrypt message");
+            throw new RuntimeException("Unable to decrypt ticket");
         }
 
         byte[] sessionKey = body.getTicket().getAesKey();
         if (!body.getAuthenticator().decrypt(sessionKey)) {
-            throw new RuntimeException("Unable to encrypt message");
+            throw new RuntimeException("Unable to decrypt authenticator message");
         }
     }
 }

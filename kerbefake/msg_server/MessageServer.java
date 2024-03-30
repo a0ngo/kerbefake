@@ -1,5 +1,7 @@
 package kerbefake.msg_server;
 
+import kerbefake.common.Logger;
+
 import javax.net.ServerSocketFactory;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -10,28 +12,22 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Base64;
 
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
-
 /**
  * A class representing a print server.
  */
 public class MessageServer {
 
     /**
-     * This server's ID.
-     */
-    private String serverId;
-
-    /**
      * The symmetric key used by the server to decrypt messages
      */
-    private byte[] key;
+    private final byte[] key;
 
     /**
      * The socket used to serve incoming connections.
      */
-    private ServerSocket socket;
+    private final ServerSocket socket;
+
+    public static Logger msgLogger = Logger.getLogger(Logger.LoggerType.MESSAGE_SERVER_LOGGER);
 
     public MessageServer() throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader("msg.info"));
@@ -52,7 +48,7 @@ public class MessageServer {
             throw new RuntimeException("No key in msg.info file.");
         }
 
-        info("%s server starting", name);
+        msgLogger.info("%s server starting", name);
 
         String[] ipComps = addr.split(":");
         int port;
@@ -65,7 +61,6 @@ public class MessageServer {
         this.socket = ServerSocketFactory.getDefault().createServerSocket();
         this.socket.setSoTimeout(1000); // 1 second timeout
         this.socket.bind(new InetSocketAddress(ipComps[0], port));
-        this.serverId = serverId;
         this.key = Base64.getDecoder().decode(keyBase64);
     }
 
@@ -78,7 +73,7 @@ public class MessageServer {
                 // We simply continue since we set a 1 second timeout to make sure we stop the server.
                 continue;
             } catch (IOException e) {
-                error("Failed to accept connection due to: %s", e);
+                msgLogger.error("Failed to accept connection due to: %s", e);
                 continue; // We hope this is fixed on its own.
             }
 
@@ -88,7 +83,7 @@ public class MessageServer {
         try {
             socket.close();
         } catch (IOException e) {
-            error("Failed to close socket due to: %s", e);
+            msgLogger.error("Failed to close socket due to: %s", e);
             throw new RuntimeException(e);
         }
 

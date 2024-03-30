@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.msg_server.MessageServer.msgLogger;
 
 /**
  * A class representing all known sessions and their keys to the message server
@@ -27,7 +27,7 @@ public final class KnownSessions {
 
     public synchronized boolean addSession(String clientId, Ticket ticket) {
         if (this.userIdToKeyMapping.containsKey(clientId)) {
-            error("Client ID already exists in session mapping, ignoring.");
+            msgLogger.error("Client ID already exists in session mapping, ignoring.");
             return false;
         }
 

@@ -2,6 +2,8 @@ package kerbefake.common.entities;
 
 import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.common.Utils.assertNonZeroedByteArrayOfLengthN;
+
 /**
  * Represents a part of the messsage body (response or request) that is encrypted and can be encrypted or decrypted.
  */
@@ -28,4 +30,11 @@ public abstract class EncryptedServerMessageBody extends ServerMessageBody {
      */
     public abstract boolean decrypt(byte[] key) throws InvalidMessageException;
 
+    /**
+     * Checks if the body was encrypted or not
+     * @return true if it is encrypted, false otherwise
+     */
+    public boolean isEncrypted(){
+        return this.encryptedData != null && this.encryptedData.length > 0 && assertNonZeroedByteArrayOfLengthN(this.encryptedData, this.encryptedData.length);
+    }
 }

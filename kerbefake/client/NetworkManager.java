@@ -5,8 +5,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.warn;
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.client.UserInputOutputHandler.getServerAddress;
 
 /**
@@ -15,11 +14,12 @@ import static kerbefake.client.UserInputOutputHandler.getServerAddress;
  */
 public final class NetworkManager {
 
+    public static final int DEFAULT_TIME_TILL_CLOSE = 300 * 1000;
     private static NetworkManager instance;
 
-    private Map<ServerType, ConnectionDetails> connections;
+    private final Map<ServerType, ConnectionDetails> connections;
 
-    private Timer terminationTimer;
+    private final Timer terminationTimer;
 
     public static NetworkManager getInstance() {
         return instance == null ? new NetworkManager() : instance;
@@ -35,7 +35,7 @@ public final class NetworkManager {
      * @see #openConnectionToUserProvidedServer(ServerType, String, int, int)
      */
     public ClientConnection openConnectionToUserProvidedServer(ServerType type, String defaultIp, int defaultPort) {
-        return openConnection(type, defaultIp, defaultPort, 3000);
+        return openConnectionToUserProvidedServer(type, defaultIp, defaultPort, DEFAULT_TIME_TILL_CLOSE);
     }
 
     /**
@@ -81,7 +81,7 @@ public final class NetworkManager {
                     existingConnectionDetails.terminate();
                     connections.remove(type);
                 } else if (existingConnection.getServerAddress().equals(String.format("%s:%d", ip, port))) {
-                    warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
+//                    clientLogger.warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
                     return existingConnection;
                 } else {
                     // We already have a connection open to some server which is not the same ip and port, we force the closure of it and open a new one.
@@ -95,7 +95,7 @@ public final class NetworkManager {
         boolean opened = connection.open();
 
         if (!opened) {
-            error("Failed to open a connection to %s:%d", ip, port);
+            clientLogger.error("Failed to open a connection to %s:%d", ip, port);
             return null;
         }
 
@@ -126,19 +126,26 @@ public final class NetworkManager {
 
         ClientConnection conn = connDetails.connection;
         if (!conn.isOpen()) {
-            error("Connection was closed, will try to re-open");
+            clientLogger.error("Connection was closed, will try to re-open");
             connections.remove(serverType);
             String[] addressComponents = conn.getServerAddress().split(":");
             String ip = addressComponents[0];
             int port = Integer.parseInt(addressComponents[1]);
             // 5 minute till termination.
-            return openConnection(serverType, ip, port, 300);
+            return openConnection(serverType, ip, port, DEFAULT_TIME_TILL_CLOSE);
         }
 
         connDetails.getTerminationTask().cancel();
-        terminationTimer.schedule(connDetails.getTerminationTask(), connDetails.getTimeTillTermination());
+        terminationTimer.schedule(connDetails.getTerminationTask(true), connDetails.getTimeTillTermination());
 
         return conn;
+    }
+
+    /**
+     * Used to stop the timer so that all threads stop.
+     */
+    public void terminate() {
+        terminationTimer.cancel();
     }
 
     /**
@@ -159,7 +166,7 @@ public final class NetworkManager {
 
         private ClientConnection connection;
 
-        private int timeTillTermination;
+        private final int timeTillTermination;
         // TODO: Add session
 
 
@@ -170,6 +177,17 @@ public final class NetworkManager {
         }
 
         public TimerTask getTerminationTask() {
+            return getTerminationTask(false);
+        }
+
+        public TimerTask getTerminationTask(boolean recreate) {
+            if (!recreate) return terminationTask;
+            terminationTask = new TimerTask() {
+                @Override
+                public void run() {
+                    connection.close();
+                }
+            };
             return terminationTask;
         }
 

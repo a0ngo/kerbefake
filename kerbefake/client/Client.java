@@ -1,27 +1,28 @@
 package kerbefake.client;
 
 import kerbefake.client.NetworkManager.ServerType;
-import kerbefake.common.Constants;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
+import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
 import kerbefake.client.operations.SendMessageOperation;
 import kerbefake.client.operations.SubmitTicketOperation;
+import kerbefake.common.Constants;
+import kerbefake.common.Logger;
 import kerbefake.common.entities.EmptyResponse;
-import kerbefake.common.entities.MessageCode;
-import kerbefake.client.errors.InvalidClientConfigException;
 import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.Ticket;
-import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
-import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 
+import java.io.IOException;
 import java.util.Arrays;
 
-import static kerbefake.common.Constants.ClientConstants.*;
-import static kerbefake.common.Constants.ID_LENGTH;
-import static kerbefake.common.Logger.*;
-import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
-import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
+import static kerbefake.client.Client.ClientState.*;
 import static kerbefake.client.UserInputOutputHandler.*;
+import static kerbefake.common.Constants.ClientConstants.*;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
+import static kerbefake.common.Logger.LoggerType;
 
 public class Client implements Runnable {
 
@@ -31,19 +32,21 @@ public class Client implements Runnable {
     private ClientState clientState;
     private final int defaultTimeTillClose = 300;
 
+    public static final Logger clientLogger = Logger.getLogger(LoggerType.CLIENT_LOGGER);
+
     public Client() {
         try {
             clientConfig = ClientConfig.load();
             clientState = BEFORE_REGISTER;
         } catch (InvalidClientConfigException e) {
-            if (e.getMessage() != null && !e.getMessage().isEmpty()) {
-                e.printStackTrace();
-                error("Client configuration is invalid due to: %s", e.getMessage());
+            if (e.getMessage() != null && !e.getMessage().equals(new InvalidClientConfigException().getMessage())) {
+                clientLogger.error(e);
+                clientLogger.error("Client configuration is invalid due to: %s", e.getMessage());
                 System.exit(1);
                 return;
             }
             // File not found, this could be because the client simply never connected.
-            warn("No me.info file found, if this is the first run please ignore this message.\nIf you registered in the past connection to the server might not be possible, please ask your server admin to reset your client connection by name.");
+            clientLogger.warn("No me.info file found or it is empty, if this is the first run please ignore this message.\nIf you registered in the past connection to the server might not be possible, please ask your server admin to reset your client connection by name.");
             clientState = BEFORE_REGISTER;
             clientConfig = ClientConfig.createEmpty();
         }
@@ -68,8 +71,7 @@ public class Client implements Runnable {
                 message = MENU_POST_TICKET;
                 break;
             default:
-                error("Unknown client state, trying to recover.");
-                // TODO: Add attempted recover from client state.
+                clientLogger.error("Unknown client state, trying to recover.");
                 System.exit(1);
                 return -1;
         }
@@ -86,7 +88,7 @@ public class Client implements Runnable {
             case BEFORE_REGISTER:
                 return registerToServer();
             case AFTER_REGISTER:
-                return getSymmetricKeyFromAuthServer();
+                return connectToMessageServer();
             case AFTER_TICKET:
                 return sendMessageToMessageServer();
             default:
@@ -98,39 +100,70 @@ public class Client implements Runnable {
     private boolean registerToServer() {
         // Within 5 minute before this connection will be closed automatically
         ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
-
-        String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword(),this.clientConfig.getClientIdHex()).perform();
-        if (clientId == null || clientId.length() != ID_LENGTH) {
-            error("Register operation failed.");
+        if (authServerConn == null) {
+            clientLogger.error("Failed to open connection to auth server, please check you provided the correct IP and port.");
+            return false;
+        }
+        String name = getNameFromUser();
+        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword(),this.clientConfig.getClientIdHex()).perform();
+        if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
+            clientLogger.error("Register operation failed.");
             return false;
         }
 
+        this.clientConfig.setName(name);
         this.clientConfig.setClientIdHex(clientId);
         this.clientConfig.clearPassword();
+        try {
+            this.clientConfig.storeToFile();
+        } catch (IOException e) {
+            clientLogger.error(e);
+            clientLogger.error("Failed to store client config in file due to: %s", e.getMessage());
+            // We won't know what the client ID is therefore we can't proceed and consider the operation as failed.
+            return false;
+        }
         return true;
     }
 
-    private boolean getSymmetricKeyFromAuthServer() {
+    private boolean connectToMessageServer() {
         ClientConnection authServerConn = networkManager.getConnectionForServer(NetworkManager.ServerType.AUTH);
+        if (authServerConn == null) {
+            authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, DEFAULT_AUTH_SERVER_IP, DEFAULT_AUTH_SERVER_PORT);
+        }
+
+        if (authServerConn == null) {
+            clientLogger.error("Failed to connect to the authentication server, please check you used the correct IP and port.");
+            return false;
+        }
         String serverId = getServerId();
 
-        GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId);
+        GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId, this.clientConfig.getClientIdHex());
         GetSymmetricKeyResponse response = operation.perform();
-
+        if (response == null) { // If we get null from the operation it failed and printed an error before returning value.
+            return false;
+        }
         EncryptedKey encKey = ((GetSymmetricKeyResponseBody) response.getBody()).getEncKey();
         if (!encKey.decrypt(this.clientConfig.getHashedPassword())) {
-            error("Failed to decrypt encrypted key received from server.");
+            clientLogger.error("Failed to decrypt encrypted key received from server.");
             return false;
         }
         Ticket ticket = ((GetSymmetricKeyResponseBody) response.getBody()).getTicket();
 
         if (!sessionManager.createNewSession(serverId, encKey, ticket)) {
-            error("Failed to store session key");
+            clientLogger.error("Failed to store session key");
             return false;
         }
 
-        return true;
+        Session session = sessionManager.getSession(serverId);
+
+        ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+        if (msgServerConn == null) {
+            clientLogger.error("Failed to open connection to message server, please check you provided the correct IP and port.");
+            return false;
+        }
+        return new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
     }
+
 
     /**
      * Submits a message to the message server, this involves first submitting the ticket to the message server.
@@ -141,21 +174,18 @@ public class Client implements Runnable {
      * @return - true if successful, false otherwise
      */
     private boolean sendMessageToMessageServer() {
-        // Within 5 minute before this connection will be closed automatically
         ClientConnection msgServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.MESSAGE, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_IP, Constants.ClientConstants.DEFAULT_MESSAGE_SERVER_PORT);
+        if (msgServerConn == null) {
+            clientLogger.error("Failed to open connection to message server, please check you provided the correct IP and port.");
+            return false;
+        }
         String serverId = getServerId();
         Session session = sessionManager.getSession(serverId);
 
-        boolean ticketSubmitSuccessful = new SubmitTicketOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
-        if (!ticketSubmitSuccessful) {
-            error("Failed to submit ticket to message server");
-            return false;
-        }
-
-        boolean sendMessageSuccessful = new SendMessageOperation(msgServerConn, session).perform();
+        boolean sendMessageSuccessful = new SendMessageOperation(msgServerConn, session, this.clientConfig.getClientIdHex()).perform();
 
         if (!sendMessageSuccessful) {
-            error("Failed to send message to the message server");
+            clientLogger.error("Failed to send message to the message server");
             return false;
         }
         return true;
@@ -177,13 +207,18 @@ public class Client implements Runnable {
             // Operation 2 is always exit, since we work in a sequential order, meaning you must first register,
             // then get a ticket, then submit the ticket and send a message to the message server (combined into one as per protocol spec).
             if (operation == 2) {
-                info("Exiting.");
+                networkManager.terminate();
+                clientLogger.info("Exiting.");
                 break;
             }
 
             if (!performStateOperation()) {
-                error("Failed to perform requested operation.");
+                clientLogger.error("Failed to perform requested operation.");
+                continue;
             }
+
+            clientLogger.info("Successfully performed operation");
+            clientState = clientState == BEFORE_REGISTER ? AFTER_REGISTER : AFTER_TICKET;
         }
     }
 
@@ -202,6 +237,6 @@ public class Client implements Runnable {
         /**
          * We have registered, have a client ID and our session key in memory and are ready to send a message to the message server.
          */
-        AFTER_TICKET;
+        AFTER_TICKET
     }
 }

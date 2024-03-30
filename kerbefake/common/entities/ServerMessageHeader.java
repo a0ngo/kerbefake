@@ -1,8 +1,8 @@
 package kerbefake.common.entities;
 
 import kerbefake.common.Constants;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -109,7 +109,7 @@ public class ServerMessageHeader implements Message {
     }
 
     @Override
-    public byte[] toLEByteArray() throws InvalidHexStringException {
+    public byte[] toLEByteArray() throws InvalidMessageException {
         // The raw header is received in little endian so we can return it.
         if (this.rawHeader != null) {
             return this.rawHeader;
@@ -124,6 +124,9 @@ public class ServerMessageHeader implements Message {
 
         if (this.clientID != null) {
             byte[] idByteArr = hexStringToByteArray(this.clientID);
+            if(idByteArr == null){
+                throw new InvalidMessageException("Client ID is not a hex string.");
+            }
             System.arraycopy(idByteArr, 0, byteArr, offsetCounter, idByteArr.length);
             offsetCounter += idByteArr.length;
         }

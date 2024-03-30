@@ -1,12 +1,11 @@
 package kerbefake.common;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageCodeException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageBody;
 import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +14,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
 import static kerbefake.common.Constants.RESPONSE_HEADER_SIZE;
-import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
 
 /**
@@ -30,6 +28,19 @@ public final class MessageStream {
 
     private final int HEADER_SIZE;
 
+    private final Thread parentThread;
+
+    private final Logger logger;
+
+    /**
+     * Which messages this server accepts.
+     */
+    private MessageCode[] acceptedMessages;
+
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger) throws IOException {
+        this(connectionSocket, isServer, parentThread, logger, null);
+    }
+
     /**
      * Creates a new MessageStream.
      *
@@ -37,10 +48,13 @@ public final class MessageStream {
      * @param isServer         - whether whoever is creating this stream is a server, if it is behavior is slightly different
      * @throws IOException - in case of a problem getting the streams from the socket.
      */
-    public MessageStream(Socket connectionSocket, boolean isServer) throws IOException {
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger, MessageCode[] acceptedMessages) throws IOException {
         this.inputStream = connectionSocket.getInputStream();
         this.outputStream = connectionSocket.getOutputStream();
         this.HEADER_SIZE = isServer ? Constants.REQUEST_HEADER_SIZE : RESPONSE_HEADER_SIZE;
+        this.parentThread = parentThread;
+        this.logger = logger;
+        this.acceptedMessages = acceptedMessages;
     }
 
     /**
@@ -54,9 +68,18 @@ public final class MessageStream {
      *
      * @return - A {@link ServerMessage} that was read from the stream.
      */
-    public ServerMessage readNextMessage() throws InvalidMessageException, IOException {
+    public ServerMessage readNextMessage() throws InvalidMessageException, IOException, InterruptedException {
         ServerMessageHeader messageHeader;
         ServerMessageBody messageBody;
+
+        while (!parentThread.isInterrupted()) {
+            if (inputStream.available() > 0) {
+                break;
+            }
+        }
+        if (parentThread.isInterrupted()) {
+            throw new InterruptedException();
+        }
 
         // Read message header
         byte[] headerBytes = new byte[HEADER_SIZE];
@@ -64,39 +87,53 @@ public final class MessageStream {
 
         // No data is waiting on stream, stopping.
         if (readBytes == -1) {
+//            logger.debug("No bytes waiting on stream.");
             return null;
         }
 
         if (readBytes != HEADER_SIZE) {
-            error("Failed to read header, expected 23 bytes but got %d", readBytes);
+            logger.error("Failed to read header, expected 23 bytes but got %d", readBytes);
             throw new InvalidMessageException(String.format("Failed to read header, expected 23 bytes but got %d", readBytes));
         }
 
         try {
             messageHeader = ServerMessageHeader.parseHeader(byteArrayToLEByteBuffer(headerBytes).array());
         } catch (InvalidMessageCodeException e) {
-            error(e);
+            logger.error(e);
             throw new InvalidMessageException("Invalid message code provided.");
         }
 
-        // Now we read the body if one exists
-        int payloadSize = messageHeader.getPayloadSize();
-        if (payloadSize == 0) {
+        boolean acceptMessage = acceptedMessages == null;
+        if (acceptedMessages != null)
+            for (MessageCode code : acceptedMessages) {
+                acceptMessage |= messageHeader.getMessageCode().getCode() == code.getCode();
+            }
+
+        if (!acceptMessage) {
+            // Read all remaining data to clear the socket before exiting.
+            if(messageHeader.getPayloadSize() > 0) {
+                byte[] garbage = new byte[ messageHeader.getPayloadSize()];
+                int ignored = inputStream.read(garbage);
+            }
+            logger.info("Received a message that should not accept: %s", messageHeader.getMessageCode().getMessageClass().getCanonicalName());
             return null;
         }
-
+        // Now we read the body if one exists
+        int payloadSize = messageHeader.getPayloadSize();
         byte[] bodyBytes = new byte[payloadSize];
-
-        readBytes = inputStream.read(bodyBytes);
-        if (readBytes != payloadSize) {
-            error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
-            return null;
+        if (payloadSize != 0) {
+            logger.debug("Reading payload for %d bytes", payloadSize);
+            readBytes = inputStream.read(bodyBytes);
+            if (readBytes != payloadSize) {
+                logger.error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
+                return null;
+            }
         }
 
         MessageCode messageCode = messageHeader.getMessageCode();
         Class<? extends ServerMessage> messageClass = messageCode.getMessageClass();
         Class<? extends ServerMessageBody> bodyClass = messageCode.getBodyClass();
-        debug("Trying to parse message body for code: %d ", messageCode.getCode());
+        logger.debug("Trying to parse message body for code: %d ", messageCode.getCode());
 
         /*
          * Here we finish building a message according to the specified message class in MessageCode.
@@ -104,25 +141,26 @@ public final class MessageStream {
          * (ServerMessageHeader header, ServerMessageBody body).
          */
         try {
-            if (bodyClass != null) {
+            if (bodyClass != null && payloadSize > 0) {
                 messageBody = bodyClass.getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
                 return messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass()).newInstance(messageHeader, messageCode.getBodyClass().cast(messageBody));
+            } else if (bodyClass != null) {
+                logger.error("Provided body type however no payload provided as part of the message.");
+                return null;
             }
             return messageClass.getConstructor(ServerMessageHeader.class).newInstance(messageHeader);
-
-
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
-            error(e);
+            logger.errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
+            logger.error(e);
             throw new InvalidMessageException(messageCode);
 
         } catch (IOException | InvocationTargetException e) {
-            error("Failed to read request body from input stream due to: %s", e);
-            error(e);
+            logger.error("Failed to read request body from input stream due to: %s", e);
+            logger.error(e);
             return null;
         } catch (Exception e) {
-            error("Unknown error occurred: %s", e.getMessage());
-            error(e);
+            logger.error("Unknown error occurred: %s", e.getMessage());
+            logger.error(e);
             return null;
         }
     }
@@ -137,15 +175,18 @@ public final class MessageStream {
         try {
             outputStream.write(message.toLEByteArray());
             return true;
-        } catch (InvalidHexStringException e) {
-            // TODO: remove this
-            throw new RuntimeException(e);
+        } catch (InvalidMessageException e) {
+            logger.error(e);
+            logger.error(e.getMessage());
         } catch (IOException e) {
-            error("Failed to send message due to: %s", e.getMessage());
-            error(e);
+//            logger.error("Failed to send message due to: %s", e.getMessage());
+            logger.error(e);
         }
         return false;
-
     }
 
+    public void close() throws IOException {
+        inputStream.close();
+        outputStream.close();
+    }
 }
