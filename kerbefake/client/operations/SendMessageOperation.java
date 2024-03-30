@@ -7,6 +7,8 @@ import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SendMessageRequest;
 import kerbefake.msg_server.entities.SendMessageRequestFactory;
 
+import static kerbefake.client.Client.clientLogger;
+import static kerbefake.client.UserInputOutputHandler.promptLongString;
 import static kerbefake.client.UserInputOutputHandler.promptString;
 
 public class SendMessageOperation extends ClientOperation<SendMessageRequest, EmptyResponse, Boolean> {
@@ -20,7 +22,7 @@ public class SendMessageOperation extends ClientOperation<SendMessageRequest, Em
 
     @Override
     protected SendMessageRequest generateRequest() throws InvalidMessageException {
-        String message = promptString("Please provide the message to send to the server", true);
+        String message = promptLongString("Please provide the message to send to the server");
 
         return SendMessageRequestFactory.getInstance().setMessage(message).encrypt(session.getSessionKey()).setClientId(clientId).build();
     }

@@ -53,6 +53,20 @@ public final class UserInputOutputHandler {
     }
 
     /**
+     * When needing a long string scanner.next() will stop at a space, need another method to get a long string with space and other characters.
+     *
+     * @param message - the message to display to the user.
+     * @return the string provided by the user.
+     */
+    public static String promptLongString(String message) {
+        clientLogger.info(message);
+        System.out.print("> ");
+        String firstPart = inputHandler.next();
+        String rest = inputHandler.nextLine();
+        return firstPart + " " + rest;
+    }
+
+    /**
      * Prompts the user for an integer
      *
      * @param message    - the message to show the user.
