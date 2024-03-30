@@ -1,20 +1,21 @@
 package kerbefake.auth_server.entities.requests.get_sym_key;
 
-import kerbefake.common.entities.*;
-import kerbefake.auth_server.entities.ClientEntry;
 import kerbefake.auth_server.KnownPeers;
+import kerbefake.auth_server.entities.ClientEntry;
 import kerbefake.auth_server.entities.MessageServerEntry;
 import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.security.SecureRandom;
 
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.common.CryptoUtils.getIv;
+import static kerbefake.common.CryptoUtils.getSecureRandomBytes;
+import static kerbefake.common.Logger.*;
+import static kerbefake.common.Utils.bytesToHexString;
 
 public class GetSymmetricKeyRequest extends ServerMessage implements ServerRequest {
     public GetSymmetricKeyRequest(ServerMessageHeader header, GetSymmetricKeyRequestBody body) {
@@ -46,13 +47,10 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
         }
 
 
-        byte[] aesKey = new byte[32];
-        byte[] ticketIv = new byte[16];
-        byte[] clientIv = new byte[16];
-        SecureRandom sRand = new SecureRandom();
-        sRand.nextBytes(aesKey);
-        sRand.nextBytes(ticketIv);
-        sRand.nextBytes(clientIv);
+        byte[] aesKey = getSecureRandomBytes(32);
+        byte[] ticketIv = getIv();
+        byte[] clientIv = getIv();
+        ;
 
         long time = System.currentTimeMillis();
         long expTime = time + 10 * 60 * 1000; // 10 minutes

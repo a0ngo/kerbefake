@@ -116,7 +116,6 @@ public class Ticket extends EncryptedServerMessageBody {
             System.arraycopy(expTime, 0, dataToEncrypt, 32, 8);
 
             this.encryptedData = CryptoUtils.encrypt(key, this.ticketIv, dataToEncrypt);
-            info("TEST - Decrypted data: %s, Encrypted: %s", bytesToHexString(dataToEncrypt), bytesToHexString(encryptedData));
             return true;
         } catch (RuntimeException e) {
             return false;

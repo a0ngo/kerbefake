@@ -1,18 +1,15 @@
 package kerbefake.msg_server;
 
-import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.common.ConnectionHandler;
-import kerbefake.common.entities.*;
-import kerbefake.common.errors.CryptographicException;
+import kerbefake.common.entities.EncryptedServerMessage;
+import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.entities.ServerRequest;
+import kerbefake.common.entities.Ticket;
 import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.Logger.error;
 
 public class MessageServerConnectionHandler extends ConnectionHandler {

@@ -47,23 +47,22 @@ public final class SubmitTicketRequestFactory extends MessageFactory<SubmitTicke
         return this;
     }
 
-    public SubmitTicketRequestFactory encrypt(byte[] key) throws InvalidMessageException {
+    public SubmitTicketRequestFactory encrypt(byte[] sessionKey) throws InvalidMessageException {
         if (this.authenticator == null)
             throw new InvalidMessageException("Missing authenticator for request.");
         if (this.ticket == null)
             throw new InvalidMessageException("Missing ticket for request.");
 
         if (!this.authenticator.isEncrypted())
-            this.authenticator.encrypt(key);
+            this.authenticator.encrypt(sessionKey);
         if (!this.ticket.isEncrypted())
-            this.ticket.encrypt(key);
+            throw new InvalidMessageException("Ticket is not encrypted but should have been already (since we just pass the encrypted ticket to the server.");
 
         encrypted = true;
 
-        if (payloadSize == 0) {
-            payloadSize += this.authenticator.toLEByteArray().length;
-            payloadSize += this.ticket.toLEByteArray().length;
-        }
+        payloadSize = this.authenticator.toLEByteArray().length;
+        payloadSize += this.ticket.toLEByteArray().length;
+
 
         return this;
     }
@@ -77,7 +76,7 @@ public final class SubmitTicketRequestFactory extends MessageFactory<SubmitTicke
         if (!encrypted)
             throw new InvalidMessageException("Must encrypt before building.");
 
-        ServerMessageHeader header = new ServerMessageHeader(SERVER_VERSION, MessageCode.SUBMIT_TICKET, payloadSize);
+        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.SUBMIT_TICKET, payloadSize);
         return new SubmitTicketRequest(header, new SubmitTicketRequestBody(authenticator, ticket));
     }
 }

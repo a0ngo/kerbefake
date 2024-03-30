@@ -17,9 +17,10 @@ public class CreateSymmetricKeyRequestFactory extends MessageFactory<GetSymmetri
 
 
     public CreateSymmetricKeyRequestFactory setServerId(String serverId) {
-        if (this.serverId != null) payloadSize -= this.serverId.length();
+        // ID is sent as bytes which is half of the length of the string.
+        if (this.serverId != null) payloadSize -= this.serverId.length() / 2;
         this.serverId = serverId;
-        payloadSize += serverId.length();
+        payloadSize += serverId.length() / 2;
         return this;
     }
 
@@ -35,7 +36,7 @@ public class CreateSymmetricKeyRequestFactory extends MessageFactory<GetSymmetri
         if (serverId == null || serverId.isEmpty()) {
             throw new InvalidMessageException("Missing server ID from request.");
         }
-        if (assertNonZeroedByteArrayOfLengthN(nonce, NONCE_SIZE)) {
+        if (!assertNonZeroedByteArrayOfLengthN(nonce, NONCE_SIZE)) {
             throw new InvalidMessageException("Missing nonce from request or is all 0.");
         }
         ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, payloadSize);

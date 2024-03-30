@@ -59,7 +59,7 @@ public final class SendMessageRequestFactory extends MessageFactory<SendMessageR
             throw new InvalidMessageException("Missing IV or not encrypted before building.");
         if (encryptedMessage == null || encryptedMessage.length == 0 || !assertNonZeroedByteArrayOfLengthN(encryptedMessage, encryptedMessage.length))
             throw new InvalidMessageException("Must encrypt before building.");
-        ServerMessageHeader header = new ServerMessageHeader(SERVER_VERSION, MessageCode.SEND_MESSAGE, payloadSize);
+        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.SEND_MESSAGE, payloadSize);
         return new SendMessageRequest(header, new SendMessageRequestBody(messageSize, iv, encryptedMessage));
     }
 }
