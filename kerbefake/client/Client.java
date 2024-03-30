@@ -93,13 +93,14 @@ public class Client implements Runnable {
     private boolean registerToServer() {
         // Within 5 minute before this connection will be closed automatically
         ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
-
-        String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword()).perform();
+        String name = getNameFromUser();
+        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword()).perform();
         if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             error("Register operation failed.");
             return false;
         }
 
+        this.clientConfig.setName(name);
         this.clientConfig.setClientIdHex(clientId);
         this.clientConfig.clearPassword();
         try {
@@ -115,6 +116,9 @@ public class Client implements Runnable {
 
     private boolean connectToMessageServer() {
         ClientConnection authServerConn = networkManager.getConnectionForServer(NetworkManager.ServerType.AUTH);
+        if (authServerConn == null) {
+            authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, DEFAULT_AUTH_SERVER_IP, DEFAULT_AUTH_SERVER_PORT);
+        }
         String serverId = getServerId();
 
         GetSymKeyOperation operation = new GetSymKeyOperation(authServerConn, serverId, this.clientConfig.getClientIdHex());
@@ -178,6 +182,7 @@ public class Client implements Runnable {
             // Operation 2 is always exit, since we work in a sequential order, meaning you must first register,
             // then get a ticket, then submit the ticket and send a message to the message server (combined into one as per protocol spec).
             if (operation == 2) {
+                networkManager.terminate();
                 info("Exiting.");
                 break;
             }

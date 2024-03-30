@@ -143,6 +143,13 @@ public final class NetworkManager {
     }
 
     /**
+     * Used to stop the timer so that all threads stop.
+     */
+    public void terminate() {
+        terminationTimer.cancel();
+    }
+
+    /**
      * An enum that contains the types of servers we can connect to.
      */
     protected enum ServerType {
