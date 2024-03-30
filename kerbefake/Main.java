@@ -26,11 +26,19 @@ public class Main {
                         new Client().run();
                         return;
                     case Constants.MODE_AUTH:
+                        if (authServerThread != null) {
+                            commonLogger.error("Auth server is already running.");
+                            break;
+                        }
                         AuthServer authServer = new AuthServer();
                         authServerThread = new Thread(authServer::start);
                         authServerThread.start();
                         break;
                     case Constants.MODE_SERVER:
+                        if (msgServerThread != null) {
+                            commonLogger.error("Message server is already running.");
+                            break;
+                        }
                         try {
                             MessageServer msgServer = new MessageServer();
                             msgServerThread = new Thread(msgServer::start);
