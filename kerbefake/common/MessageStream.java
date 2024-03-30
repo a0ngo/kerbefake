@@ -146,4 +146,8 @@ public final class MessageStream {
         return false;
     }
 
+    public void close() throws IOException {
+        inputStream.close();
+        outputStream.close();
+    }
 }
