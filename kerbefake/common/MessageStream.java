@@ -63,7 +63,7 @@ public final class MessageStream {
 
         // No data is waiting on stream, stopping.
         if (readBytes == -1) {
-            debug("No bytes waiting on stream.");
+//            debug("No bytes waiting on stream.");
             return null;
         }
 
@@ -140,7 +140,7 @@ public final class MessageStream {
             error(e);
             error(e.getMessage());
         } catch (IOException e) {
-            error("Failed to send message due to: %s", e.getMessage());
+//            error("Failed to send message due to: %s", e.getMessage());
             error(e);
         }
         return false;
