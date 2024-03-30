@@ -1,5 +1,6 @@
 package kerbefake.tests;
 
+import kerbefake.common.MessageStream;
 import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
@@ -43,24 +44,42 @@ final class Tests {
     public static String CLIENT_ID = null;
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
-        info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
-        testFullCorrectFlow();
-        info("TEST - Waiting 3 seconds to make sure all threads are dead.");
-        Thread.sleep(3 * 1000);
-        info("TEST - ================ \uD83E\uDDEA Testing expected failure duplicate registration \uD83E\uDDEA ===================");
-        testDuplicateRegister();
-        Thread.sleep(3 * 1000);
-        info("TEST - ================ \uD83E\uDDEA Testing expected failure due to ticket being expired \uD83E\uDDEA ===================");
-        testExpiredTicket();
+        int successfulTests = 0, totalTests = 3;
+        try {
+            info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
+            testFullCorrectFlow();
+            info("TEST - ================ ✅✅✅ Testing full correct flow ✅✅✅ ===================");
+            successfulTests++;
+            info("TEST - Waiting 3 seconds to make sure all threads are dead.");
+            Thread.sleep(3 * 1000);
+            info("TEST - ================ \uD83E\uDDEA Testing expected failure duplicate registration \uD83E\uDDEA ===================");
+            testDuplicateRegister();
+            successfulTests++;
+            info("TEST - ================ ✅✅✅ Testing expected failure duplicate registration ✅✅✅ ===================");
+            Thread.sleep(3 * 1000);
+            info("TEST - ================ \uD83E\uDDEA Testing expected failure due to ticket being expired \uD83E\uDDEA ===================");
+            testExpiredTicket();
+            successfulTests++;
+            info("TEST - ================ ✅✅✅ Testing expected failure due to ticket being expired ✅✅✅ ===================");
+
+        } catch (RuntimeException e) {
+            // Do nothing, just continue
+            // Each test terminates the message on its own.
+        }
+        if (successfulTests == totalTests) {
+            info("TEST - ✅✅✅ Finished ALL tests successfully (%d/%d)", successfulTests, totalTests);
+        } else {
+            error("TEST - ❌❌❌ Some tests failed (%d/%d successful)", successfulTests, totalTests);
+        }
     }
 
     private static void testExpiredTicket() throws NoSuchAlgorithmException, InterruptedException, IOException, InvalidHexStringException {
-        SocketAndStreams result = getSocketsAndStreams();
+        TestThreadSocketsAndStreams result = getSocketsAndStreams();
 
         try {
             String clientId;
             if (CLIENT_ID == null) {
-                clientId = registerClient(result.authServerOutputStream, result.authServerInputStream);
+                clientId = registerClient(result.authServerStream);
             } else {
                 info("TEST - No need to register, client ID is provided.");
                 clientId = CLIENT_ID;
@@ -71,7 +90,7 @@ final class Tests {
                 return;
             }
 
-            GetSymmetricKeyResponse getSymKey = getSymKey(result.authServerOutputStream, result.authServerInputStream, clientId);
+            GetSymmetricKeyResponse getSymKey = getSymKey(result.authServerStream, clientId);
             if (getSymKey == null) {
                 endTest(result.authServerSocket, result.authServerThreadHandle, result.msgServerThreadHandle);
                 return;
@@ -85,7 +104,7 @@ final class Tests {
             info("Test - sleeping for 5 seconds");
             Thread.sleep(5 * 1000);
             try {
-                submitTicketToMsgServer(result.msgServerOutputStream, result.msgServerInputStream, ticket, clientId, encryptedKey);
+                submitTicketToMsgServer(result.msgServerStream, ticket, clientId, encryptedKey);
             } catch (InvalidHexStringException | RuntimeException e) {
                 if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                     info("TEST - ✅ Test failed as expected");
@@ -108,12 +127,12 @@ final class Tests {
      * @throws IOException
      */
     private static void testDuplicateRegister() throws IOException, InterruptedException {
-        info("TEST - ================ Expected failure from dup register ===================");
+        info("TEST - =========== Expected failure from dup register ===========");
         info("TEST - Trying to register client with auth server.");
 
-        SocketAndStreams socketsAndStreams = getSocketsAndStreams();
+        TestThreadSocketsAndStreams socketsAndStreams = getSocketsAndStreams();
         try {
-            registerClient(socketsAndStreams.authServerOutputStream, socketsAndStreams.authServerInputStream);
+            registerClient(socketsAndStreams.authServerStream);
         } catch (InvalidHexStringException | RuntimeException e) {
             if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                 info("TEST - ✅ Test failed as expected");
@@ -135,12 +154,12 @@ final class Tests {
      * @throws NoSuchAlgorithmException
      */
     private static void testFullCorrectFlow() throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
-        SocketAndStreams result = getSocketsAndStreams();
+        TestThreadSocketsAndStreams result = getSocketsAndStreams();
 
         try {
             String clientId;
             if (CLIENT_ID == null) {
-                clientId = registerClient(result.authServerOutputStream, result.authServerInputStream);
+                clientId = registerClient(result.authServerStream);
             } else {
                 info("TEST - No need to register, client ID is provided.");
                 clientId = CLIENT_ID;
@@ -152,7 +171,7 @@ final class Tests {
                 return;
             }
 
-            GetSymmetricKeyResponse getSymKey = getSymKey(result.authServerOutputStream, result.authServerInputStream, clientId);
+            GetSymmetricKeyResponse getSymKey = getSymKey(result.authServerStream, clientId);
             if (getSymKey == null) {
                 endTest(result.authServerSocket, result.authServerThreadHandle, result.msgServerThreadHandle);
                 return;
@@ -163,9 +182,9 @@ final class Tests {
             EncryptedKey encryptedKey = getSessionKey(getSymKey, clientId);
             Ticket ticket = ((GetSymmetricKeyResponseBody) getSymKey.getBody()).getTicket();
 
-            submitTicketToMsgServer(result.msgServerOutputStream, result.msgServerInputStream, ticket, clientId, encryptedKey);
+            submitTicketToMsgServer(result.msgServerStream, ticket, clientId, encryptedKey);
 
-            sendMessageToMsgServer(result.msgServerOutputStream, result.msgServerInputStream, encryptedKey, clientId);
+            sendMessageToMsgServer(result.msgServerStream, encryptedKey, clientId);
         } finally {
             if (!result.authServerSocket.isClosed())
                 endTest(result.authServerSocket);
@@ -177,13 +196,11 @@ final class Tests {
     /**
      * Test to register a client to the auth server
      *
-     * @param out - the output stream to use to send messages
-     * @param in  - the input stream to use to read responses
      * @return A string corresponding to the client ID or null in case of an error
      * @throws IOException - in case of an IO error when communicating with the server
      */
-    private static String registerClient(OutputStream out, InputStream in) throws IOException, InvalidHexStringException {
-        info("TEST - ================ Submit Ticket to Message Server (1024) ===================");
+    private static String registerClient(MessageStream stream) throws IOException, InvalidHexStringException {
+        info("TEST - =========== Submit Ticket to Message Server (1024) ===========");
         info("TEST - Trying to register client with auth server.");
 
         String randomId = bytesToHexString(new byte[16]);
@@ -191,7 +208,7 @@ final class Tests {
         char[] password = "strongPassword123!\0".toCharArray();
         int payloadSize = name.length() + password.length;
         RegisterClientRequest request = new RegisterClientRequest(new ServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
-        RegisterClientResponse response = sendRequestAndGetResponse(out, in, request);
+        RegisterClientResponse response = (RegisterClientResponse) sendRequestAndGetResponse(stream, request);
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to register client with auth server");
         }
@@ -202,8 +219,8 @@ final class Tests {
 
     }
 
-    private static GetSymmetricKeyResponse getSymKey(OutputStream out, InputStream in, String clientId) throws IOException, InvalidHexStringException {
-        info("TEST - ================ Submit Ticket to Message Server (1027) ===================");
+    private static GetSymmetricKeyResponse getSymKey(MessageStream stream, String clientId) throws IOException, InvalidHexStringException {
+        info("TEST - =========== Submit Ticket to Message Server (1027) ===========");
         info("TEST - Trying to get symmetric key from auth server.");
         byte[] nonce = new byte[8];
         new SecureRandom().nextBytes(nonce);
@@ -212,7 +229,7 @@ final class Tests {
                 new ServerMessageHeader(clientId, (byte) 4, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
                 body
         );
-        GetSymmetricKeyResponse response = sendRequestAndGetResponse(out, in, request);
+        GetSymmetricKeyResponse response = (GetSymmetricKeyResponse) sendRequestAndGetResponse(stream, request);
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to get symmetric key and ticket from auth server");
         }
@@ -245,14 +262,12 @@ final class Tests {
     /**
      * Submits a ticket to the message server and confirms it was received.
      *
-     * @param out      - the output stream to use to write the request
-     * @param in       - the input stream to use to read the response
      * @param ticket   - the ticket to send
      * @param clientId - our client ID
      * @param key      - the key which holds our session key
      */
-    private static void submitTicketToMsgServer(OutputStream out, InputStream in, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidHexStringException {
-        info("TEST - ================ Submit Ticket to Message Server (1028) ===================");
+    private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidHexStringException {
+        info("TEST - =========== Submit Ticket to Message Server (1028) ===========");
         info("TEST - Submitting a ticket to the message server.");
 
         byte[] iv = getIv();
@@ -267,7 +282,7 @@ final class Tests {
         SubmitTicketRequestBody body = new SubmitTicketRequestBody(authenticator, ticket);
         SubmitTicketRequest request = new SubmitTicketRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SUBMIT_TICKET, body.toLEByteArray().length), body);
 
-        if (sendRequestAndGetResponse(out, in, request) == null) {
+        if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to submit ticket to message server");
         }
         info("TEST - ✅ Successfully submitted a ticket");
@@ -276,22 +291,20 @@ final class Tests {
     /**
      * Sends a message to the message server, must be done after establishing a session with the message server.
      *
-     * @param out      - the output stream to use.
-     * @param in       - the input stream to use.
      * @param key      - the encrypted key containing the session key to use for encryption
      * @param clientId - the client ID to use
      * @throws IOException in case of a failure to send the request or get the response
      */
-    private static void sendMessageToMsgServer(OutputStream out, InputStream in, EncryptedKey key, String clientId) throws IOException, InvalidHexStringException {
-        info("TEST - ================ Send Message to Message Server ===================");
+    private static void sendMessageToMsgServer(MessageStream stream, EncryptedKey key, String clientId) throws IOException {
+        info("TEST - =========== Send Message to Message Server ===========");
         info("TEST - Sending a message to the message server.");
         byte[] iv = getIv();
-        String message = "Hello this is some random message very long hahahah 1231 123 123 40n3 to wef";
+        String message = "Hello this is some random message very long test 1231 123 123 40n3 to wef";
 
         SendMessageRequestBody body = new SendMessageRequestBody(iv, message);
         body.encrypt(key.getAesKey());
         SendMessageRequest request = new SendMessageRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SEND_MESSAGE, body.toLEByteArray().length), body);
-        if (sendRequestAndGetResponse(out, in, request) == null) {
+        if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to send message or get response");
         }
         info("TEST - ✅ Successfully sent a message");
@@ -324,17 +337,25 @@ final class Tests {
         }
     }
 
-    private static <T extends ServerMessage> T sendRequestAndGetResponse(OutputStream out, InputStream in, ServerMessage req) throws IOException, InvalidHexStringException {
-        out.write(req.toLEByteArray());
-        ServerMessage response = null;
+    /**
+     * Sends a message to the server and waits to get the reply back from the server.
+     *
+     * @param messageStream - the {@link MessageStream} to use
+     * @param serverMessage - the {@link ServerMessage} to use
+     * @return the response from teh server, null is also possible.
+     * @throws IOException
+     */
+    private static ServerMessage sendRequestAndGetResponse(MessageStream messageStream, ServerMessage serverMessage) throws IOException {
+        messageStream.sendMessage(serverMessage);
+        ServerMessage response;
         try {
-            response = ServerMessage.parse(in, true);
+            response = messageStream.readNextMessage();
             if (response instanceof FailureResponse) {
                 throw new RuntimeException("TEST - ❌ Failed");
             }
-            return (T) response;
+            return response;
         } catch (InvalidMessageException e) {
-            e.printStackTrace();
+            error(e);
             error("TEST - ❌ Failed to parse response due to: %s", e);
         }
         return null;
@@ -346,39 +367,37 @@ final class Tests {
      * @return an object containing all the streams and sockets needed for testing
      * @throws IOException
      */
-    private static SocketAndStreams getSocketsAndStreams() throws IOException {
+    private static TestThreadSocketsAndStreams getSocketsAndStreams() throws IOException {
         Thread authServerThreadHandle = startAuthServer();
         Thread msgServerThreadHandle = startMessageServer();
 
         Socket authServerSocket = new Socket("127.0.0.1", 1256);
-        OutputStream authServerOutputStream = authServerSocket.getOutputStream();
-        InputStream authServerInputStream = authServerSocket.getInputStream();
         Socket msgServerSocket = new Socket("127.0.0.1", 1235);
-        OutputStream msgServerOutputStream = msgServerSocket.getOutputStream();
-        InputStream msgServerInputStream = msgServerSocket.getInputStream();
-        SocketAndStreams result = new SocketAndStreams(authServerThreadHandle, msgServerThreadHandle, authServerSocket, authServerOutputStream, authServerInputStream, msgServerSocket, msgServerOutputStream, msgServerInputStream);
-        return result;
+
+        MessageStream authServerStream = new MessageStream(authServerSocket, false);
+        MessageStream msgServerStream = new MessageStream(msgServerSocket, false);
+
+        return new TestThreadSocketsAndStreams(authServerThreadHandle, msgServerThreadHandle, authServerSocket, authServerStream, msgServerSocket, msgServerStream);
     }
 
-    private static class SocketAndStreams {
+    /**
+     * A data class that contains all the threads that are started for the test; all the sockets opened for the test and all the streams used in the test.
+     */
+    private static class TestThreadSocketsAndStreams {
         public final Thread authServerThreadHandle;
         public final Thread msgServerThreadHandle;
         public final Socket authServerSocket;
-        public final OutputStream authServerOutputStream;
-        public final InputStream authServerInputStream;
+        public final MessageStream authServerStream;
         public final Socket msgServerSocket;
-        public final OutputStream msgServerOutputStream;
-        public final InputStream msgServerInputStream;
+        public final MessageStream msgServerStream;
 
-        public SocketAndStreams(Thread authServerThreadHandle, Thread msgServerThreadHandle, Socket authServerSocket, OutputStream authServerOutputStream, InputStream authServerInputStream, Socket msgServerSocket, OutputStream msgServerOutputStream, InputStream msgServerInputStream) {
+        public TestThreadSocketsAndStreams(Thread authServerThreadHandle, Thread msgServerThreadHandle, Socket authServerSocket, MessageStream authServerStream, Socket msgServerSocket, MessageStream msgServerStream) {
             this.authServerThreadHandle = authServerThreadHandle;
             this.msgServerThreadHandle = msgServerThreadHandle;
             this.authServerSocket = authServerSocket;
-            this.authServerOutputStream = authServerOutputStream;
-            this.authServerInputStream = authServerInputStream;
+            this.authServerStream = authServerStream;
             this.msgServerSocket = msgServerSocket;
-            this.msgServerOutputStream = msgServerOutputStream;
-            this.msgServerInputStream = msgServerInputStream;
+            this.msgServerStream = msgServerStream;
         }
     }
 }
