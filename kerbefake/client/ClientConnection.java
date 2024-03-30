@@ -1,11 +1,10 @@
 package kerbefake.client;
 
+import kerbefake.common.MessageStream;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 
 import static kerbefake.common.Logger.error;
@@ -20,8 +19,7 @@ public class ClientConnection {
     private final String serverAddress;
     private final int serverPort;
     private Socket socket;
-    private OutputStream out;
-    private InputStream in;
+    private MessageStream messageStream;
 
     public ClientConnection(String serverAddress, int serverPort) {
         this.serverAddress = serverAddress;
@@ -36,11 +34,10 @@ public class ClientConnection {
     public boolean open() {
         try {
             socket = new Socket(serverAddress, serverPort);
-            out = socket.getOutputStream();
-            in = socket.getInputStream();
+            messageStream = new MessageStream(socket, false);
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            error(e);
             error("Failed to connect to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
             return false;
         }
@@ -66,24 +63,18 @@ public class ClientConnection {
 
     public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException {
         info("Sending message to server.");
-        out.write(message.toLEByteArray());
+        messageStream.sendMessage(message);
         info("Waiting for server response.");
-        return ServerMessage.parse(in);
-    }
-
-    public ServerMessage receiveMessageFromServer() throws IOException {
-        //TODO: Fix
-        return null;
+        return messageStream.readNextMessage();
     }
 
     public void close() {
         try {
-            in.close();
-            out.close();
+            messageStream.close();
             socket.close();
             info("Connection to server %s:%d closed.", serverAddress, serverPort);
         } catch (IOException e) {
-            e.printStackTrace();
+            error(e);
             error("Failed closing connection to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
         }
     }
