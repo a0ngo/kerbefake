@@ -1,31 +1,32 @@
 package kerbefake.tests;
 
+import kerbefake.auth_server.entities.requests.get_sym_key.CreateSymmetricKeyRequestFactory;
 import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequest;
-import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequest;
-import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequestBody;
+import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequestFactory;
 import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
 import kerbefake.common.MessageStream;
-import kerbefake.common.entities.*;
+import kerbefake.common.entities.Authenticator;
+import kerbefake.common.entities.EncryptedKey;
+import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.entities.Ticket;
 import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SendMessageRequest;
-import kerbefake.msg_server.entities.SendMessageRequestBody;
+import kerbefake.msg_server.entities.SendMessageRequestFactory;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
-import kerbefake.msg_server.entities.SubmitTicketRequestBody;
+import kerbefake.msg_server.entities.SubmitTicketRequestFactory;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
-import static kerbefake.common.Constants.SERVER_VERSION;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.common.Constants.NONCE_SIZE;
+import static kerbefake.common.CryptoUtils.*;
+import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.bytesToHexString;
 import static kerbefake.common.Utils.hexStringToByteArray;
 import static kerbefake.tests.TestUtils.startAuthServer;
@@ -34,7 +35,7 @@ import static kerbefake.tests.TestUtils.startMessageServer;
 /**
  * A test class for client registration request - {@link RegisterClientRequest}
  */
-@SuppressWarnings({"unused", "ConstantValue", "JavadocDeclaration"})
+@SuppressWarnings({"unused", "ConstantValue", "JavadocDeclaration", "DuplicatedCode"})
 final class Tests {
 
     public static final String PASSWORD = "strongPassword123!";
@@ -66,6 +67,7 @@ final class Tests {
         } catch (RuntimeException | InvalidMessageException e) {
             // Do nothing, just continue
             // Each test terminates the message on its own.
+            e.printStackTrace();
         }
         if (successfulTests == totalTests) {
             info("TEST - ✅✅✅ Finished ALL tests successfully (%d/%d)", successfulTests, totalTests);
@@ -127,7 +129,7 @@ final class Tests {
      *
      * @throws IOException
      */
-    private static void testDuplicateRegister() throws IOException, InterruptedException {
+    private static void testDuplicateRegister() throws IOException, InterruptedException, InvalidMessageException {
         info("TEST - =========== Expected failure from dup register ===========");
         info("TEST - Trying to register client with auth server.");
 
@@ -200,7 +202,7 @@ final class Tests {
      * @return A string corresponding to the client ID or null in case of an error
      * @throws IOException - in case of an IO error when communicating with the server
      */
-    private static String registerClient(MessageStream stream) throws IOException {
+    private static String registerClient(MessageStream stream) throws IOException, InvalidMessageException {
         info("TEST - =========== Submit Ticket to Message Server (1024) ===========");
         info("TEST - Trying to register client with auth server.");
 
@@ -208,7 +210,7 @@ final class Tests {
         String name = "Ron Person\0";
         char[] password = "strongPassword123!\0".toCharArray();
         int payloadSize = name.length() + password.length;
-        RegisterClientRequest request = new RegisterClientRequest(new ServerMessageHeader(randomId, (byte) 4, MessageCode.REGISTER_CLIENT, payloadSize), new RegisterClientRequestBody(name, password));
+        RegisterClientRequest request = RegisterClientRequestFactory.getInstance().setName(name).setPassword(password).build();
         RegisterClientResponse response = (RegisterClientResponse) sendRequestAndGetResponse(stream, request);
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to register client with auth server");
@@ -223,13 +225,8 @@ final class Tests {
     private static GetSymmetricKeyResponse getSymKey(MessageStream stream, String clientId) throws IOException, InvalidMessageException {
         info("TEST - =========== Submit Ticket to Message Server (1027) ===========");
         info("TEST - Trying to get symmetric key from auth server.");
-        byte[] nonce = new byte[8];
-        new SecureRandom().nextBytes(nonce);
-        GetSymmetricKeyRequestBody body = new GetSymmetricKeyRequestBody(SERVER_ID, nonce);
-        GetSymmetricKeyRequest request = new GetSymmetricKeyRequest(
-                new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
-                body
-        );
+        byte[] nonce = getSecureRandomBytes(NONCE_SIZE);
+        GetSymmetricKeyRequest request = CreateSymmetricKeyRequestFactory.getInstance().setNonce(nonce).setServerId(SERVER_ID).setClientId(CLIENT_ID).build();
         GetSymmetricKeyResponse response = (GetSymmetricKeyResponse) sendRequestAndGetResponse(stream, request);
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to get symmetric key and ticket from auth server");
@@ -253,10 +250,7 @@ final class Tests {
 
         assert clientId.equals(getSymKeyBody.getClientId());
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] key = digest.digest(PASSWORD.getBytes());
-
-        encKey.decrypt(key);
+        encKey.decrypt(performSha256(PASSWORD));
         return encKey;
     }
 
@@ -267,7 +261,7 @@ final class Tests {
      * @param clientId - our client ID
      * @param key      - the key which holds our session key
      */
-    private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidMessageException {
+    private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidMessageException, NoSuchAlgorithmException {
         info("TEST - =========== Submit Ticket to Message Server (1028) ===========");
         info("TEST - Submitting a ticket to the message server.");
 
@@ -284,11 +278,9 @@ final class Tests {
                 serverIdBytes,
                 ticket.getCreationTime()
         );
-        authenticator.encrypt(key.getAesKey());
+        SubmitTicketRequest request = SubmitTicketRequestFactory.getInstance().setTicket(ticket).setAuthenticator(authenticator).encrypt(key.getAesKey()).setClientId(CLIENT_ID).build();
 
-        SubmitTicketRequestBody body = new SubmitTicketRequestBody(authenticator, ticket);
-        SubmitTicketRequest request = new SubmitTicketRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SUBMIT_TICKET, body.toLEByteArray().length), body);
-
+        debug("TEST - Submit ticket data: " + bytesToHexString(request.toLEByteArray()));
         if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to submit ticket to message server");
         }
@@ -302,31 +294,17 @@ final class Tests {
      * @param clientId - the client ID to use
      * @throws IOException in case of a failure to send the request or get the response
      */
-    private static void sendMessageToMsgServer(MessageStream stream, EncryptedKey key, String clientId) throws IOException {
+    private static void sendMessageToMsgServer(MessageStream stream, EncryptedKey key, String clientId) throws IOException, InvalidMessageException {
         info("TEST - =========== Send Message to Message Server ===========");
         info("TEST - Sending a message to the message server.");
-        byte[] iv = getIv();
         String message = "Hello this is some random message very long test 1231 123 123 40n3 to wef";
 
-        SendMessageRequestBody body = new SendMessageRequestBody(iv, message);
-        body.encrypt(key.getAesKey());
-        SendMessageRequest request = new SendMessageRequest(new ServerMessageHeader(clientId, (byte) 24, MessageCode.SEND_MESSAGE, body.toLEByteArray().length), body);
+        SendMessageRequest request = SendMessageRequestFactory.getInstance().setMessage(message).encrypt(key.getAesKey()).setClientId(CLIENT_ID).build();
         if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to send message or get response");
         }
         info("TEST - ✅ Successfully sent a message");
 
-    }
-
-    /**
-     * Gets a random 16 byte IV
-     *
-     * @return a 16 byte IV
-     */
-    private static byte[] getIv() {
-        byte[] iv = new byte[16];
-        new SecureRandom().nextBytes(iv);
-        return iv;
     }
 
     /**
