@@ -92,6 +92,11 @@ public final class ClientConfig {
                 // Ignoring since we expect only two lines
             }
 
+             if(name == null && clientId == null){
+                warn("Client configuration file exists but is empty, please remove it.");
+                throw new InvalidClientConfigException();
+            }
+
             if (name == null || name.isEmpty()) {
                 throw new InvalidClientConfigException("Missing user name, it cannot be empty");
             }
@@ -104,7 +109,7 @@ public final class ClientConfig {
         } catch (FileNotFoundException e) {
             throw new InvalidClientConfigException();
         } catch (IOException e) {
-            e.printStackTrace();
+            error(e);
             throw new InvalidClientConfigException(String.format("Failed to read client configuration due to: %s", e.getMessage()));
         }
     }
