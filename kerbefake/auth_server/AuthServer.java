@@ -20,7 +20,7 @@ import static kerbefake.common.Constants.DEFAULT_PORT_AUTH_SERVER;
 public class AuthServer {
 
     private final ArrayList<Thread> connectionHandles = new ArrayList<>();
-    
+
     public static final Logger authLogger = Logger.getLogger(Logger.LoggerType.AUTH_SERVER_LOGGER);
 
     /**
@@ -89,7 +89,7 @@ public class AuthServer {
      */
     private int loadPort() {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(new File("./port.info")));
+            BufferedReader reader = new BufferedReader(new FileReader("./port.info"));
             String portStr = reader.readLine();
 
             return Integer.parseInt(portStr);

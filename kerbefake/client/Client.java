@@ -44,7 +44,7 @@ public class Client implements Runnable {
                 return;
             }
             // File not found, this could be because the client simply never connected.
-            clientLogger.warn("No me.info file found, if this is the first run please ignore this message.\nIf you registered in the past connection to the server might not be possible, please ask your server admin to reset your client connection by name.");
+            clientLogger.warn("No me.info file found or it is empty, if this is the first run please ignore this message.\nIf you registered in the past connection to the server might not be possible, please ask your server admin to reset your client connection by name.");
             clientState = BEFORE_REGISTER;
             clientConfig = ClientConfig.createEmpty();
         }
@@ -67,7 +67,6 @@ public class Client implements Runnable {
                 break;
             default:
                 clientLogger.error("Unknown client state, trying to recover.");
-                // TODO: Add attempted recover from client state.
                 System.exit(1);
                 return -1;
         }

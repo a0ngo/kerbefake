@@ -13,7 +13,7 @@ import static kerbefake.common.Logger.commonLogger;
 public class Main {
 
     public static void main(String[] args) {
-        int modeSelection = -1;
+        int modeSelection;
 
         Thread authServerThread = null, msgServerThread = null;
         Scanner userInputScanner = new Scanner(System.in);
