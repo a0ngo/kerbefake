@@ -110,10 +110,8 @@ public final class UserInputOutputHandler {
      * Gets the password from the user and immediately hashes it. The value is stored only if we're in the pre-register state
      * in which case we need it for the registration operation.
      */
-    public static char[] getPasswordFromUser() {
-        info("Please provide your password;");
-        System.out.print("> ");
-        return System.console().readPassword();
+    public static char[] getPasswordFromUser(){
+        return promptString("Please provide your password;",false).toCharArray();
     }
 
     public static String getNameFromUser() {

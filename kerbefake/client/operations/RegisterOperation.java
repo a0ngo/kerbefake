@@ -28,10 +28,12 @@ import static kerbefake.client.UserInputOutputHandler.getNameFromUser;
 public final class RegisterOperation extends ClientOperation<RegisterClientRequest, String> {
 
     private char[] plaintextPassword;
+    private final String clientID;
 
-    public RegisterOperation(ClientConnection connection, char[] plaintextPassword) {
+    public RegisterOperation(ClientConnection connection, char[] plaintextPassword, String clientID) {
         super(connection);
         this.plaintextPassword = plaintextPassword;
+        this.clientID = clientID;
     }
 
     @Override
@@ -39,8 +41,9 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
         String name = getNameFromUser();
 
         RegisterClientRequestBody registerClientRequestBody = new RegisterClientRequestBody(name, this.plaintextPassword);
-        ServerMessageHeader registerClentHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.REGISTER_CLIENT, registerClientRequestBody.toLEByteArray().length);
-        RegisterClientRequest registerClientRequest = new RegisterClientRequest(registerClentHeader, registerClientRequestBody);
+        ServerMessageHeader registerClientHeader = new ServerMessageHeader(this.clientID, SERVER_VERSION, MessageCode.REGISTER_CLIENT,
+            registerClientRequestBody.toLEByteArray().length);
+        RegisterClientRequest registerClientRequest = new RegisterClientRequest(registerClientHeader, registerClientRequestBody);
 
         try {
             ServerMessage response = this.internalPerform(registerClientRequest);

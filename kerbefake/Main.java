@@ -1,6 +1,7 @@
 package kerbefake;
 
 import kerbefake.auth_server.AuthServer;
+import kerbefake.client.Client;
 import kerbefake.common.Constants;
 import kerbefake.msg_server.MessageServer;
 
@@ -32,9 +33,11 @@ public class Main {
 
         switch (modeSelection) {
             case Constants.MODE_CLIENT:
+                Client client = new Client();
+                client.run();
                 break;
             case Constants.MODE_AUTH:
-                new AuthServer();
+                new AuthServer().start();
                 break;
             case Constants.MODE_SERVER:
                 try {

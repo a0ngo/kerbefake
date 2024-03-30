@@ -1,5 +1,6 @@
 package kerbefake.client;
 
+import kerbefake.client.NetworkManager.ServerType;
 import kerbefake.common.Constants;
 import kerbefake.client.operations.GetSymKeyOperation;
 import kerbefake.client.operations.RegisterOperation;
@@ -28,11 +29,12 @@ public class Client implements Runnable {
     private NetworkManager networkManager;
     private SessionManager sessionManager;
     private ClientState clientState;
+    private final int defaultTimeTillClose = 300;
 
     public Client() {
         try {
             clientConfig = ClientConfig.load();
-            clientState = AFTER_REGISTER;
+            clientState = BEFORE_REGISTER;
         } catch (InvalidClientConfigException e) {
             if (e.getMessage() != null && !e.getMessage().isEmpty()) {
                 e.printStackTrace();
@@ -49,7 +51,10 @@ public class Client implements Runnable {
         sessionManager = SessionManager.getInstance();
     }
 
-
+    public void openAuthConnection(String ip,int port)
+    {
+        networkManager.openConnection(ServerType.AUTH,ip,port, defaultTimeTillClose);
+    }
     private int getOperationToPerform() {
         String message;
         switch (clientState) {
@@ -94,7 +99,7 @@ public class Client implements Runnable {
         // Within 5 minute before this connection will be closed automatically
         ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
 
-        String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword()).perform();
+        String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword(),this.clientConfig.getClientIdHex()).perform();
         if (clientId == null || clientId.length() != ID_LENGTH) {
             error("Register operation failed.");
             return false;
