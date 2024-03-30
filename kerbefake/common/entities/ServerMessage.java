@@ -1,9 +1,8 @@
 package kerbefake.common.entities;
 
 import kerbefake.common.Constants;
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -45,7 +44,7 @@ public abstract class ServerMessage {
      *
      * @return - the little endian byte array.
      */
-    public byte[] toLEByteArray() throws InvalidHexStringException {
+    public byte[] toLEByteArray() throws InvalidMessageException {
         byte[] header = this.header.toLEByteArray();
         byte[] body = this.body == null ? new byte[0] : this.body.toLEByteArray();
 

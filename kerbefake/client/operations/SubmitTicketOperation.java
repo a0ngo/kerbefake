@@ -6,7 +6,7 @@ import kerbefake.common.entities.Authenticator;
 import kerbefake.common.entities.EmptyResponse;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessageHeader;
-import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
 import kerbefake.msg_server.entities.SubmitTicketRequestBody;
 
@@ -25,8 +25,8 @@ public final class SubmitTicketOperation extends ClientOperation<SubmitTicketReq
     }
 
     @Override
-    protected SubmitTicketRequest generateRequest() throws InvalidHexStringException {
-        Authenticator authenticator = this.session.creatAuthenticator(clientId);
+    protected SubmitTicketRequest generateRequest() throws InvalidMessageException {
+        Authenticator authenticator = this.session.createAuthenticator(clientId);
         SubmitTicketRequestBody submitTicketRequestBody = new SubmitTicketRequestBody(authenticator, session.getTicket());
         ServerMessageHeader serverMessageHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.SUBMIT_TICKET, submitTicketRequestBody.toLEByteArray().length);
         SubmitTicketRequest submitTicketRequest = new SubmitTicketRequest(serverMessageHeader, submitTicketRequestBody);

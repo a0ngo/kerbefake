@@ -16,7 +16,7 @@ import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyRespo
 import java.util.Arrays;
 
 import static kerbefake.common.Constants.ClientConstants.*;
-import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Logger.*;
 import static kerbefake.client.Client.ClientState.AFTER_REGISTER;
 import static kerbefake.client.Client.ClientState.BEFORE_REGISTER;
@@ -95,7 +95,7 @@ public class Client implements Runnable {
         ClientConnection authServerConn = networkManager.openConnectionToUserProvidedServer(NetworkManager.ServerType.AUTH, Constants.ClientConstants.DEFAULT_AUTH_SERVER_IP, Constants.ClientConstants.DEFAULT_AUTH_SERVER_PORT);
 
         String clientId = new RegisterOperation(authServerConn, this.clientConfig.getPlainTextPassword()).perform();
-        if (clientId == null || clientId.length() != ID_LENGTH) {
+        if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             error("Register operation failed.");
             return false;
         }

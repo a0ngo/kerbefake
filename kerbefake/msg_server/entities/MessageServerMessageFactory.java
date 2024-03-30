@@ -1,7 +1,6 @@
 package kerbefake.msg_server.entities;
 
 import kerbefake.common.CryptoUtils;
-import kerbefake.common.Utils;
 import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidMessageException;
 
@@ -55,7 +54,7 @@ public final class MessageServerMessageFactory {
             return this;
         }
 
-        public SubmitTicketRequestFactory setTicket(Ticket ticket) {
+        public SubmitTicketRequestFactory setTicket(Ticket ticket) throws InvalidMessageException {
             if (this.ticket != null)
                 if (this.ticket.isEncrypted())
                     payloadSize -= this.ticket.toLEByteArray().length;

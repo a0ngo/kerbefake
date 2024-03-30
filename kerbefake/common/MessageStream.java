@@ -1,12 +1,11 @@
 package kerbefake.common;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageCodeException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageBody;
 import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -137,15 +136,14 @@ public final class MessageStream {
         try {
             outputStream.write(message.toLEByteArray());
             return true;
-        } catch (InvalidHexStringException e) {
-            // TODO: remove this
-            throw new RuntimeException(e);
+        } catch (InvalidMessageException e) {
+            error(e);
+            error(e.getMessage());
         } catch (IOException e) {
             error("Failed to send message due to: %s", e.getMessage());
             error(e);
         }
         return false;
-
     }
 
 }

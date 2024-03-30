@@ -1,12 +1,11 @@
 package kerbefake.auth_server;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
+import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
-import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerRequest;
-import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -20,9 +19,9 @@ import static kerbefake.common.Logger.error;
  */
 public class AuthServerConnectionHandler implements Runnable {
 
-    private Socket conn;
+    private final Socket conn;
 
-    private Thread parentThread;
+    private final Thread parentThread;
 
     public AuthServerConnectionHandler(Socket conn, Thread parentThread) {
         assert conn != null;
@@ -66,19 +65,19 @@ public class AuthServerConnectionHandler implements Runnable {
 
             } catch (InvalidMessageException | ClassCastException e) {
                 // This is just an invalid message, or one we don't know how to handle - ignore and close connection.
-                e.printStackTrace();
+                error(e);
                 error("Failed to parse message due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
                     break;
-                } catch (IOException | InvalidHexStringException ex) {
+                } catch (IOException ex) {
                     error("Failed to write failure response: %s", e);
                     break;
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                error(e);
                 error("Failed to send response due to: %s - terminating the connection", e);
                 break;
 
@@ -87,8 +86,8 @@ public class AuthServerConnectionHandler implements Runnable {
                 try {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
-                } catch (IOException | InvalidHexStringException ex) {
-                    e.printStackTrace();
+                } catch (IOException e1) {
+                    error(e1);
                     // Hopefully this will be fixed later one.
                 }
                 break;

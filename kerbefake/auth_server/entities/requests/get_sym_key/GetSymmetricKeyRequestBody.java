@@ -1,9 +1,9 @@
 package kerbefake.auth_server.entities.requests.get_sym_key;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.entities.ServerMessageBody;
+import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Utils.*;
 
 public class GetSymmetricKeyRequestBody extends ServerMessageBody {
@@ -41,13 +41,17 @@ public class GetSymmetricKeyRequestBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() throws InvalidHexStringException {
+    public byte[] toLEByteArray() throws InvalidMessageException {
         byte[] byteArr = new byte[24];
         if (this.serverId == null || this.nonce == null || this.serverId.length() != 32 || this.nonce.length != 8) {
             throw new RuntimeException("Missing or invalid values for nonce / server ID.");
         }
-        System.arraycopy(hexStringToByteArray(this.serverId), 0, byteArr, 0, 16);
-        System.arraycopy(this.nonce, 0, byteArr, 16, 8);
+        byte[] serverIdBytes = hexStringToByteArray(this.serverId);
+        if (serverIdBytes == null) {
+            throw new InvalidMessageException("Server ID is not a hex string");
+        }
+        System.arraycopy(serverIdBytes, 0, byteArr, 0, ID_HEX_LENGTH_CHARS / 2);
+        System.arraycopy(this.nonce, 0, byteArr, ID_HEX_LENGTH_CHARS / 2, 8);
 
 
         return byteArrayToLEByteBuffer(byteArr).array();

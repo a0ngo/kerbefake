@@ -1,7 +1,6 @@
 package kerbefake.common.entities;
 
 import kerbefake.common.CryptoUtils;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
@@ -32,7 +31,7 @@ public class Authenticator extends EncryptedServerMessageBody {
     }
 
 
-    public Authenticator(byte[] iv, String clientId, String serverId, long creationTime) throws InvalidHexStringException {
+    public Authenticator(byte[] iv, String clientId, String serverId, long creationTime) throws InvalidMessageException {
         this(iv, hexStringToByteArray(clientId), hexStringToByteArray(serverId), ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(creationTime).array());
     }
 

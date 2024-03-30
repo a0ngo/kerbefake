@@ -1,10 +1,9 @@
 package kerbefake.msg_server;
 
+import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.common.entities.*;
 import kerbefake.common.errors.CryptographicException;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
-import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
 
 import java.io.BufferedInputStream;
@@ -16,11 +15,11 @@ import static kerbefake.common.Logger.error;
 
 public class MessageServerConnectionHandler implements Runnable {
 
-    private Socket conn;
+    private final Socket conn;
 
-    private byte[] symKey;
+    private final byte[] symKey;
 
-    private Thread parentThread;
+    private final Thread parentThread;
 
     public MessageServerConnectionHandler(Socket conn, Thread parentThread, byte[] symKey) {
         this.conn = conn;
@@ -68,16 +67,17 @@ public class MessageServerConnectionHandler implements Runnable {
 
                 out.write(response.toLEByteArray());
                 out.flush();
-            } catch (InvalidMessageException | CryptographicException | IOException | InvalidHexStringException e) {
+            } catch (InvalidMessageException | CryptographicException | IOException e) {
                 // This is just an invalid message, or one we don't know how to handle - ignore and close connection.
-                e.printStackTrace();
+                error(e);
                 error("Failed to parse message due to: %s", e);
                 try {
                     out.write(unknownFailure.toLEByteArray());
                     out.flush();
                     break;
-                } catch (IOException | InvalidHexStringException ex) {
-                    error("Failed to write failure response: %s", e);
+                } catch (IOException ex) {
+                    error(ex);
+                    error("Failed to write failure response: %s", ex.getMessage());
                     break;
                 }
             }

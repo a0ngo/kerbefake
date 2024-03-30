@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
-import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.warn;
 
@@ -97,7 +97,7 @@ public final class ClientConfig {
                 throw new InvalidClientConfigException("Missing user name, it cannot be empty");
             }
 
-            if (clientId == null || clientId.length() != ID_LENGTH) {
+            if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
                 throw new InvalidClientConfigException("Missing user client ID, must be 32 hex characters");
             }
 

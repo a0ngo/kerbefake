@@ -1,6 +1,6 @@
 package kerbefake.common.entities;
 
-import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
 
 /**
  * General interface for any message sent back and forth.
@@ -12,5 +12,5 @@ public interface Message {
      *
      * @return this message but in a little endian byte array.
      */
-    public byte[] toLEByteArray() throws InvalidHexStringException;
+    public byte[] toLEByteArray() throws InvalidMessageException;
 }

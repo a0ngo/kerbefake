@@ -25,7 +25,7 @@ public final class Constants {
     /**
      * ID length in hex (16 bytes).
      */
-    public static final int ID_LENGTH = 32;
+    public static final int ID_HEX_LENGTH_CHARS = 32;
 
     /**
      * Size of any given IV in bytes.

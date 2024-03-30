@@ -1,8 +1,8 @@
 package kerbefake.auth_server.entities.responses.register_client;
 
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.auth_server.errors.InvalidResponseDataException;
 import kerbefake.common.entities.ServerMessageBody;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -35,8 +35,12 @@ public class RegisterClientResponseBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() throws InvalidHexStringException  {
-        return byteArrayToLEByteBuffer(hexStringToByteArray(this.id)).array();
+    public byte[] toLEByteArray() throws InvalidMessageException {
+        byte[] clientId = hexStringToByteArray(this.id);
+        if (clientId == null) {
+            throw new InvalidMessageException("Client ID is not a hex string.");
+        }
+        return byteArrayToLEByteBuffer(clientId).array();
     }
 
     @Override

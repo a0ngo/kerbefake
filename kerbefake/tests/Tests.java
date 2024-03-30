@@ -1,9 +1,5 @@
 package kerbefake.tests;
 
-import kerbefake.common.MessageStream;
-import kerbefake.common.entities.*;
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequest;
 import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.auth_server.entities.requests.register_client.RegisterClientRequest;
@@ -13,12 +9,15 @@ import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyRespo
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
+import kerbefake.common.MessageStream;
+import kerbefake.common.entities.*;
+import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SendMessageRequest;
 import kerbefake.msg_server.entities.SendMessageRequestBody;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
 import kerbefake.msg_server.entities.SubmitTicketRequestBody;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,7 +27,8 @@ import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.info;
 import static kerbefake.common.Utils.bytesToHexString;
 import static kerbefake.common.Utils.hexStringToByteArray;
-import static kerbefake.tests.TestUtils.*;
+import static kerbefake.tests.TestUtils.startAuthServer;
+import static kerbefake.tests.TestUtils.startMessageServer;
 
 /**
  * A test class for client registration request - {@link RegisterClientRequest}
@@ -43,7 +43,7 @@ final class Tests {
 
     public static String CLIENT_ID = null;
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
         int successfulTests = 0, totalTests = 3;
         try {
             info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
@@ -62,7 +62,7 @@ final class Tests {
             successfulTests++;
             info("TEST - ================ ✅✅✅ Testing expected failure due to ticket being expired ✅✅✅ ===================");
 
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | InvalidMessageException e) {
             // Do nothing, just continue
             // Each test terminates the message on its own.
         }
@@ -73,7 +73,7 @@ final class Tests {
         }
     }
 
-    private static void testExpiredTicket() throws NoSuchAlgorithmException, InterruptedException, IOException, InvalidHexStringException {
+    private static void testExpiredTicket() throws NoSuchAlgorithmException, InterruptedException, IOException, InvalidMessageException {
         TestThreadSocketsAndStreams result = getSocketsAndStreams();
 
         try {
@@ -105,7 +105,7 @@ final class Tests {
             Thread.sleep(5 * 1000);
             try {
                 submitTicketToMsgServer(result.msgServerStream, ticket, clientId, encryptedKey);
-            } catch (InvalidHexStringException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                     info("TEST - ✅ Test failed as expected");
                     return;
@@ -133,7 +133,7 @@ final class Tests {
         TestThreadSocketsAndStreams socketsAndStreams = getSocketsAndStreams();
         try {
             registerClient(socketsAndStreams.authServerStream);
-        } catch (InvalidHexStringException | RuntimeException e) {
+        } catch (RuntimeException e) {
             if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
                 info("TEST - ✅ Test failed as expected");
                 return;
@@ -153,7 +153,7 @@ final class Tests {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    private static void testFullCorrectFlow() throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidHexStringException {
+    private static void testFullCorrectFlow() throws IOException, NoSuchAlgorithmException, InterruptedException, InvalidMessageException {
         TestThreadSocketsAndStreams result = getSocketsAndStreams();
 
         try {
@@ -199,7 +199,7 @@ final class Tests {
      * @return A string corresponding to the client ID or null in case of an error
      * @throws IOException - in case of an IO error when communicating with the server
      */
-    private static String registerClient(MessageStream stream) throws IOException, InvalidHexStringException {
+    private static String registerClient(MessageStream stream) throws IOException {
         info("TEST - =========== Submit Ticket to Message Server (1024) ===========");
         info("TEST - Trying to register client with auth server.");
 
@@ -219,7 +219,7 @@ final class Tests {
 
     }
 
-    private static GetSymmetricKeyResponse getSymKey(MessageStream stream, String clientId) throws IOException, InvalidHexStringException {
+    private static GetSymmetricKeyResponse getSymKey(MessageStream stream, String clientId) throws IOException, InvalidMessageException {
         info("TEST - =========== Submit Ticket to Message Server (1027) ===========");
         info("TEST - Trying to get symmetric key from auth server.");
         byte[] nonce = new byte[8];
@@ -266,15 +266,21 @@ final class Tests {
      * @param clientId - our client ID
      * @param key      - the key which holds our session key
      */
-    private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidHexStringException {
+    private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidMessageException {
         info("TEST - =========== Submit Ticket to Message Server (1028) ===========");
         info("TEST - Submitting a ticket to the message server.");
 
         byte[] iv = getIv();
+        byte[] clientIdBytes = hexStringToByteArray(clientId);
+        byte[] serverIdBytes = hexStringToByteArray(SERVER_ID);
+
+        // We control this, for sure they are not null.
+        assert clientIdBytes != null;
+        assert serverIdBytes != null;
         Authenticator authenticator = new Authenticator(
                 iv,
-                hexStringToByteArray(clientId),
-                hexStringToByteArray(SERVER_ID),
+                clientIdBytes,
+                serverIdBytes,
                 ticket.getCreationTime()
         );
         authenticator.encrypt(key.getAesKey());

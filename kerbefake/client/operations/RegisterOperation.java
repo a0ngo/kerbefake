@@ -7,14 +7,11 @@ import kerbefake.auth_server.entities.responses.register_client.RegisterClientRe
 import kerbefake.client.ClientConnection;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessageHeader;
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import static kerbefake.client.UserInputOutputHandler.getNameFromUser;
-import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.Logger.error;
 
@@ -51,7 +48,7 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
         RegisterClientResponseBody responseBody = (RegisterClientResponseBody) response.getBody();
         String clientId = responseBody.getId();
 
-        if (clientId == null || clientId.length() != ID_LENGTH) {
+        if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             error("Invalid client ID received in the response, can't proceed, received: %s", clientId);
             return null;
         }

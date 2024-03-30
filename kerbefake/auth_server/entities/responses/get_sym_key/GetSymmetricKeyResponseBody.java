@@ -1,9 +1,9 @@
 package kerbefake.auth_server.entities.responses.get_sym_key;
 
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.entities.EncryptedKey;
 import kerbefake.common.entities.ServerMessageBody;
 import kerbefake.common.entities.Ticket;
+import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Utils.*;
 
@@ -38,13 +38,18 @@ public class GetSymmetricKeyResponseBody extends ServerMessageBody {
     }
 
     @Override
-    public byte[] toLEByteArray() throws InvalidHexStringException {
+    public byte[] toLEByteArray() throws InvalidMessageException {
         byte[] encKeyBytes = encKey.toLEByteArray();
         byte[] ticketBytes = ticket.toLEByteArray();
 
         byte[] byteArr = new byte[clientId.length() + encKeyBytes.length + ticketBytes.length];
         int offset = 0;
-        System.arraycopy(hexStringToByteArray(clientId), 0, byteArr, 0, 16);
+        byte[] clientIdBytes = hexStringToByteArray(clientId);
+        // If this was null, ticket.toLEByteArray would have failed, but we do the check regardless
+        if (clientIdBytes == null) {
+            throw new InvalidMessageException("Client ID is not a hex string.");
+        }
+        System.arraycopy(clientIdBytes, 0, byteArr, 0, 16);
         offset += 16;
         System.arraycopy(encKeyBytes, 0, byteArr, offset, encKeyBytes.length);
         offset += encKeyBytes.length;

@@ -1,11 +1,9 @@
 package kerbefake.client;
 
-import kerbefake.common.errors.InvalidHexStringException;
-
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import static kerbefake.common.Constants.ID_LENGTH;
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.hexStringToByteArray;
 
@@ -23,7 +21,7 @@ public final class UserInputOutputHandler {
 
 
     /**
-     * A regex for IP - https://stackoverflow.com/a/36760050
+     * A regex for IP - <a href="https://stackoverflow.com/a/36760050">StackOverflow answer</a>
      */
     private static final String IP_REGEX = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
 
@@ -151,7 +149,7 @@ public final class UserInputOutputHandler {
     /**
      * Gets the server ID the user wants to communicate with
      *
-     * @return
+     * @return the server ID provided by the user
      */
     public static String getServerId() {
         if (lastServerIdProvided != null) {
@@ -161,18 +159,17 @@ public final class UserInputOutputHandler {
         }
         String serverId = promptString("Please provide the server ID to connect to;", true);
         do {
-            if (serverId.length() == ID_LENGTH) {
-                try {
-                    hexStringToByteArray(serverId);
-                    break;
-                } catch (InvalidHexStringException e) {
+            if (serverId.length() == ID_HEX_LENGTH_CHARS) {
+                if (hexStringToByteArray(serverId) == null)
                     error("Provided server ID is not a 32 byte hex string, please try again.");
-                }
+                else
+                    break;
             } else {
                 error("Provided server ID is not a 32 byte hex string, please try again.");
             }
             serverId = inputHandler.next();
         } while (true);
+        lastServerIdProvided = serverId;
         return serverId;
     }
 

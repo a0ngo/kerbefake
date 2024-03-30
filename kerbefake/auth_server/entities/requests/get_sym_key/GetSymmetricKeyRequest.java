@@ -1,13 +1,13 @@
 package kerbefake.auth_server.entities.requests.get_sym_key;
 
 import kerbefake.common.entities.*;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.auth_server.entities.ClientEntry;
 import kerbefake.auth_server.KnownPeers;
 import kerbefake.auth_server.entities.MessageServerEntry;
 import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -22,7 +22,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
     }
 
     @Override
-    public ServerMessage execute() throws InvalidHexStringException {
+    public ServerMessage execute() throws InvalidMessageException {
         FailureResponse failure = new FailureResponse(this.header.toResponseHeader(MessageCode.UNKNOWN_FAILURE, 0));
         KnownPeers peers = KnownPeers.getInstance();
         ClientEntry client;

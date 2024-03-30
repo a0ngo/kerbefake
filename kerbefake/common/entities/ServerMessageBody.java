@@ -1,9 +1,8 @@
 package kerbefake.common.entities;
 
 import kerbefake.auth_server.errors.InvalidResponseDataException;
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.errors.InvalidMessageCodeException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -31,8 +30,9 @@ public abstract class ServerMessageBody {
      * Converts this body to a LE byte array.
      *
      * @return - the LE byte array representing this response.
+     * @throws InvalidMessageException - in case the message data is invalid or there was some problem in the serialization of the message
      */
-    public abstract byte[] toLEByteArray() throws InvalidHexStringException;
+    public abstract byte[] toLEByteArray() throws InvalidMessageException;
 
     public static ServerMessageBody parse(ServerMessageHeader header, BufferedInputStream stream) throws InvalidMessageException {
         int payloadSize = header.getPayloadSize();
@@ -57,11 +57,11 @@ public abstract class ServerMessageBody {
             }
 
         } catch (IOException | InvocationTargetException e) {
-            e.printStackTrace();
+            error(e);
             error("Failed to read request body from input stream due to: %s", e);
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            error(e);
             error("%s", e);
             return null;
         }

@@ -1,9 +1,9 @@
 package kerbefake.client;
 
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.entities.Authenticator;
 import kerbefake.common.entities.EncryptedKey;
 import kerbefake.common.entities.Ticket;
+import kerbefake.common.errors.InvalidMessageException;
 
 import java.security.SecureRandom;
 
@@ -52,7 +52,7 @@ public final class Session {
         this.serverId = serverId;
     }
 
-    public Authenticator creatAuthenticator(String clientId) throws InvalidHexStringException {
+    public Authenticator createAuthenticator(String clientId) throws InvalidMessageException {
         SecureRandom srand = new SecureRandom();
         byte[] iv = new byte[IV_SIZE];
         srand.nextBytes(iv);

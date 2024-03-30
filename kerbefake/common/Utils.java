@@ -1,7 +1,5 @@
 package kerbefake.common;
 
-import kerbefake.common.errors.InvalidHexStringException;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -163,7 +161,7 @@ public final class Utils {
      * @param hexString - the hex string to convert
      * @return a byte array corresponding to the hex string
      */
-    public static byte[] hexStringToByteArray(String hexString) throws InvalidHexStringException {
+    public static byte[] hexStringToByteArray(String hexString) {
         String hex = hexString.length() % 2 == 0 ? hexString : "0" + hexString;
         byte[] bytes = new byte[hex.length() / 2];
         for (int i = 0; i < hex.length(); i += 2) {
@@ -171,7 +169,7 @@ public final class Utils {
             char rightDigit = hex.charAt(i + 1);
             if (leftDigit < '0' || (leftDigit > '9' && leftDigit < 'a') || leftDigit > 'f'
                     || rightDigit < '0' || (rightDigit > '9' && rightDigit < 'a') || rightDigit > 'f') {
-                throw new InvalidHexStringException(hex, i / 2);
+                return null;
             }
             byte b = (byte) ((Byte.parseByte(String.valueOf(leftDigit), 16) << 4) + Byte.parseByte(String.valueOf(rightDigit), 16));
             bytes[i / 2] = b;

@@ -1,10 +1,11 @@
 package kerbefake.client;
 
-import kerbefake.common.errors.InvalidHexStringException;
-import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.common.entities.ServerMessage;
+import kerbefake.common.errors.InvalidMessageException;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import static kerbefake.common.Logger.error;
@@ -63,7 +64,7 @@ public class ClientConnection {
         return String.format("%s:%d", socket.getInetAddress().getHostAddress(), socket.getPort());
     }
 
-    public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException, InvalidHexStringException {
+    public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException {
         info("Sending message to server.");
         out.write(message.toLEByteArray());
         info("Waiting for server response.");

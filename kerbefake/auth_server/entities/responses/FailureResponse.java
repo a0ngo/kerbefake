@@ -1,8 +1,10 @@
 package kerbefake.auth_server.entities.responses;
 
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.errors.InvalidMessageException;
+
+import static kerbefake.common.Logger.error;
 
 public class FailureResponse extends ServerMessage {
 
@@ -11,7 +13,13 @@ public class FailureResponse extends ServerMessage {
     }
 
     @Override
-    public byte[] toLEByteArray() throws InvalidHexStringException {
-        return header.toLEByteArray();
+    public byte[] toLEByteArray() {
+        try {
+            return header.toLEByteArray();
+        } catch (InvalidMessageException e) {
+            // This will never happen since response does not have a hex string in its content.
+            error(e);
+            return null;
+        }
     }
 }

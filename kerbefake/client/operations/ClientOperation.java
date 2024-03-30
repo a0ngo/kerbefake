@@ -3,7 +3,6 @@ package kerbefake.client.operations;
 import kerbefake.auth_server.entities.responses.FailureResponse;
 import kerbefake.client.ClientConnection;
 import kerbefake.common.entities.ServerMessage;
-import kerbefake.common.errors.InvalidHexStringException;
 import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.IOException;
@@ -37,7 +36,7 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
      *
      * @return the request needed to send to the server response from the server, null if there is some error.
      */
-    protected abstract REQ generateRequest() throws InvalidMessageException, InvalidHexStringException, IOException;
+    protected abstract REQ generateRequest() throws InvalidMessageException, IOException;
 
     /**
      * Given a response from the server that is not a negative response, this method will perform whatever computation is required
@@ -83,13 +82,8 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
             }
 
             return validateResponse(properResponse);
-        } catch (IOException | InvalidHexStringException e) {
+        } catch (IOException e) {
             error(e);
-            if (e instanceof InvalidHexStringException) {
-                // This can only happen if some hex string is invalid, but this is unlikely at this stage, we will print a message and fail regardless.
-                error("Failed to encode or decode some part of the message sent or received from the server.");
-                return null;
-            }
             error("Failed to send a request to the auth server due to: %s.", e.getMessage());
         } catch (InvalidMessageException e) {
             error(e);

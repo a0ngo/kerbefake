@@ -9,7 +9,7 @@ import kerbefake.common.entities.EncryptedKey;
 import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.entities.Ticket;
-import kerbefake.common.errors.InvalidHexStringException;
+import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Constants.NONCE_SIZE;
 import static kerbefake.common.Constants.SERVER_VERSION;
@@ -27,12 +27,9 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
     }
 
     @Override
-    protected GetSymmetricKeyRequest generateRequest() throws InvalidHexStringException {
-        try {
-            hexStringToByteArray(serverId);
-        } catch (InvalidHexStringException e) {
-            error("Provided server ID is not a hex string");
-            return null;
+    protected GetSymmetricKeyRequest generateRequest() throws InvalidMessageException {
+        if (hexStringToByteArray(serverId) == null) {
+            throw new InvalidMessageException("Server ID is not a hex string.");
         }
 
         byte[] nonce = getSecureRandomBytes(NONCE_SIZE);
