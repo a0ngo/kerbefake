@@ -69,7 +69,7 @@ public final class SubmitTicketRequestFactory extends MessageFactory<SubmitTicke
     }
 
     @Override
-    public SubmitTicketRequest build() throws InvalidMessageException {
+    protected SubmitTicketRequest internalBuild() throws InvalidMessageException {
         if (this.authenticator == null)
             throw new InvalidMessageException("Missing authenticator for request.");
         if (this.ticket == null)

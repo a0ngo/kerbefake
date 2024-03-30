@@ -54,7 +54,7 @@ public final class SendMessageRequestFactory extends MessageFactory<SendMessageR
     }
 
     @Override
-    public SendMessageRequest build() throws InvalidMessageException {
+    protected SendMessageRequest internalBuild() throws InvalidMessageException {
         if (iv == null || !encrypted)
             throw new InvalidMessageException("Missing IV or not encrypted before building.");
         if (encryptedMessage == null || encryptedMessage.length == 0 || !assertNonZeroedByteArrayOfLengthN(encryptedMessage, encryptedMessage.length))

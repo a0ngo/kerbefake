@@ -31,14 +31,14 @@ public class CreateSymmetricKeyRequestFactory extends MessageFactory<GetSymmetri
     }
 
     @Override
-    public GetSymmetricKeyRequest build() throws InvalidMessageException {
+    protected GetSymmetricKeyRequest internalBuild() throws InvalidMessageException {
         if (serverId == null || serverId.isEmpty()) {
             throw new InvalidMessageException("Missing server ID from request.");
         }
         if (assertNonZeroedByteArrayOfLengthN(nonce, NONCE_SIZE)) {
             throw new InvalidMessageException("Missing nonce from request or is all 0.");
         }
-        ServerMessageHeader header = new ServerMessageHeader(SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, payloadSize);
+        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, payloadSize);
         return new GetSymmetricKeyRequest(header, new GetSymmetricKeyRequestBody(serverId, nonce));
     }
 

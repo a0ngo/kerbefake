@@ -5,7 +5,9 @@ import kerbefake.common.entities.MessageFactory;
 import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 import static kerbefake.common.Constants.SERVER_VERSION;
+import static kerbefake.common.Utils.bytesToHexString;
 
 /**
  * A class used to create {@link RegisterClientRequest}s
@@ -31,7 +33,7 @@ public final class RegisterClientRequestFactory extends MessageFactory<RegisterC
     }
 
     @Override
-    public RegisterClientRequest build() throws InvalidMessageException {
+    protected RegisterClientRequest internalBuild() throws InvalidMessageException {
         if (name == null || name.isEmpty()) {
             throw new InvalidMessageException("Missing name argument for request.");
         }
@@ -51,5 +53,6 @@ public final class RegisterClientRequestFactory extends MessageFactory<RegisterC
 
     private RegisterClientRequestFactory() {
         instance = this;
+        clientId = bytesToHexString(new byte[ID_HEX_LENGTH_CHARS / 2]);
     }
 }

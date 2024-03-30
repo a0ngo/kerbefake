@@ -9,11 +9,27 @@ public abstract class MessageFactory<MSG> {
 
     protected int payloadSize;
 
+    protected String clientId;
+
+    @SuppressWarnings("unchecked")
+    public <T extends MessageFactory<MSG>> T setClientId(String clientId) {
+        this.clientId = clientId;
+        return (T) this;
+    }
+
     /**
      * Builds the message required.
+     *
      * @return the message created by the factory
      * @throws InvalidMessageException - in case the message data provided to the factory is missing something.
      */
-    public abstract MSG build() throws InvalidMessageException;
+    protected abstract MSG internalBuild() throws InvalidMessageException;
+
+    public MSG build() throws InvalidMessageException {
+        if (this.clientId == null) {
+            throw new InvalidMessageException("Missing Client ID for request.");
+        }
+        return internalBuild();
+    }
 
 }
