@@ -80,9 +80,9 @@ public final class Constants {
          */
         public static final String MENU_PRE_REGISTER = "Please select an operation:\n1.\tRegister\n2.\tExit";
 
-        public static final String MENU_POST_REGISTER = "Please select an operation:\n1. Open connection to the message server\n2.\tExit";
+        public static final String MENU_POST_REGISTER = "Please select an operation:\n1.\tOpen connection to the message server\n2.\tExit";
 
-        public static final String MENU_POST_TICKET = "Please select an operation:\n1. Send a message to the message server\n2.\tExit";
+        public static final String MENU_POST_TICKET = "Please select an operation:\n1.\tSend a message to the message server\n2.\tExit";
 
         public static final String SEND_MESSAGE_PROMPT = "Please provide a message to send to the server.";
 
