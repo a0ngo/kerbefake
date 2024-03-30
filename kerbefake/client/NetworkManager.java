@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static kerbefake.client.UserInputOutputHandler.getServerAddress;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.warn;
-import static kerbefake.client.UserInputOutputHandler.getServerAddress;
 
 /**
  * This class is responsible for handling all the connections and sessions that a client creates.
@@ -15,6 +15,7 @@ import static kerbefake.client.UserInputOutputHandler.getServerAddress;
  */
 public final class NetworkManager {
 
+    public static final int DEFAULT_TIME_TILL_CLOSE = 300 * 1000;
     private static NetworkManager instance;
 
     private Map<ServerType, ConnectionDetails> connections;
@@ -35,7 +36,7 @@ public final class NetworkManager {
      * @see #openConnectionToUserProvidedServer(ServerType, String, int, int)
      */
     public ClientConnection openConnectionToUserProvidedServer(ServerType type, String defaultIp, int defaultPort) {
-        return openConnection(type, defaultIp, defaultPort, 3000);
+        return openConnectionToUserProvidedServer(type, defaultIp, defaultPort, DEFAULT_TIME_TILL_CLOSE);
     }
 
     /**
@@ -132,11 +133,11 @@ public final class NetworkManager {
             String ip = addressComponents[0];
             int port = Integer.parseInt(addressComponents[1]);
             // 5 minute till termination.
-            return openConnection(serverType, ip, port, 300);
+            return openConnection(serverType, ip, port, DEFAULT_TIME_TILL_CLOSE);
         }
 
         connDetails.getTerminationTask().cancel();
-        terminationTimer.schedule(connDetails.getTerminationTask(), connDetails.getTimeTillTermination());
+        terminationTimer.schedule(connDetails.getTerminationTask(true), connDetails.getTimeTillTermination());
 
         return conn;
     }
@@ -170,6 +171,17 @@ public final class NetworkManager {
         }
 
         public TimerTask getTerminationTask() {
+            return getTerminationTask(false);
+        }
+
+        public TimerTask getTerminationTask(boolean recreate) {
+            if (!recreate) return terminationTask;
+            terminationTask = new TimerTask() {
+                @Override
+                public void run() {
+                    connection.close();
+                }
+            };
             return terminationTask;
         }
 
