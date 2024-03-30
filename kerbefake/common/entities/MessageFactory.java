@@ -26,10 +26,14 @@ public abstract class MessageFactory<MSG> {
     protected abstract MSG internalBuild() throws InvalidMessageException;
 
     public MSG build() throws InvalidMessageException {
-        if (this.clientId == null) {
-            throw new InvalidMessageException("Missing Client ID for request.");
+         try {
+            if (this.clientId == null) {
+                throw new InvalidMessageException("Missing Client ID for request.");
+            }
+            return internalBuild();
+        } finally {
+            payloadSize = 0;
         }
-        return internalBuild();
     }
 
 }
