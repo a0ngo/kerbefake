@@ -43,12 +43,10 @@ public class Main {
                         authServerThread = new Thread(authServer::start);
                         authServerThread.setName("AuthServerThread");
                         authServerThread.start();
-                        Client client = new Client();
-                client.run();
-                break;
-            case Constants.MODE_SERVER:
+                        break;
+                    case Constants.MODE_SERVER:
                         if (msgServerThread != null) {
-                            commonLogger.error("Message server is already running.").start();
+                            commonLogger.error("Message server is already running.");
                             break;
                         }
                         try {
