@@ -55,7 +55,7 @@ public final class Logger {
         this.minimalLevelToFile = levelForFile;
         this.minimalLevelToConsole = levelForConsole;
         if (logToFile) {
-            logWriter = new FileWriter(type.getFileName());
+             logWriter = new FileWriter(type.getFileName(), true);
         }
     }
 
@@ -108,10 +108,6 @@ public final class Logger {
         log(LogLevel.INFO, message, args);
     }
 
-    public void infoToFileOnly(String message, Object... args) {
-        log(LogLevel.INFO, true, message, args);
-    }
-
     public void error(String message, Object... args) {
         log(LogLevel.ERROR, message, args);
     }
@@ -132,25 +128,16 @@ public final class Logger {
         log(LogLevel.WARN, message, args);
     }
 
-    public void warnToFileOnly(String message, Object... args) {
-        log(LogLevel.WARN, true, message, args);
-    }
-
     public void debug(String message, Object... args) {
         log(LogLevel.DEBUG, message, args);
     }
-
-    public void debugToFileOnly(String message, Object... args) {
-        log(LogLevel.DEBUG, true, message, args);
-    }
-
 
     private void log(LogLevel logLevel, String message, Object... args) {
         log(logLevel, false, message, args);
     }
 
     private void log(LogLevel logLevel, boolean fileOnly, String message, Object... args) {
-        String fullMessage = String.format("%7s%7s:%s%n", type.logPrefix, logLevel.getLevel(), String.format(message, args));
+        String fullMessage = String.format("%7s:%7s: %s%n", type.getLogPrefix(), logLevel.getLevel(), String.format(message, args));
         if (logToConsole)
             if (logLevel.ordinal() >= minimalLevelToConsole.ordinal())
                 System.out.printf(fullMessage);
