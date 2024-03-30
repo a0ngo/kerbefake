@@ -81,7 +81,7 @@ public final class NetworkManager {
                     existingConnectionDetails.terminate();
                     connections.remove(type);
                 } else if (existingConnection.getServerAddress().equals(String.format("%s:%d", ip, port))) {
-                    clientLogger.warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
+//                    clientLogger.warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
                     return existingConnection;
                 } else {
                     // We already have a connection open to some server which is not the same ip and port, we force the closure of it and open a new one.
