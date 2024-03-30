@@ -1,18 +1,15 @@
 package kerbefake.client.operations;
 
+import kerbefake.auth_server.entities.requests.get_sym_key.CreateSymmetricKeyRequestFactory;
 import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequest;
-import kerbefake.auth_server.entities.requests.get_sym_key.GetSymmetricKeyRequestBody;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.client.ClientConnection;
 import kerbefake.common.entities.EncryptedKey;
-import kerbefake.common.entities.MessageCode;
-import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.entities.Ticket;
 import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Constants.NONCE_SIZE;
-import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.CryptoUtils.getSecureRandomBytes;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Utils.hexStringToByteArray;
@@ -33,11 +30,8 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
         }
 
         byte[] nonce = getSecureRandomBytes(NONCE_SIZE);
-        GetSymmetricKeyRequestBody getSymmetricKeyRequestBody = new GetSymmetricKeyRequestBody(serverId, nonce);
-        ServerMessageHeader serverMessageHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, getSymmetricKeyRequestBody.toLEByteArray().length);
-        GetSymmetricKeyRequest getSymmetricKeyRequest = new GetSymmetricKeyRequest(serverMessageHeader, getSymmetricKeyRequestBody);
 
-        return getSymmetricKeyRequest;
+        return CreateSymmetricKeyRequestFactory.getInstance().setNonce(nonce).setServerId(serverId).build();
     }
 
     @Override

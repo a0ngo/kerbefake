@@ -3,14 +3,11 @@ package kerbefake.client.operations;
 import kerbefake.client.ClientConnection;
 import kerbefake.client.Session;
 import kerbefake.common.entities.EmptyResponse;
-import kerbefake.common.entities.MessageCode;
-import kerbefake.common.entities.ServerMessageHeader;
+import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SendMessageRequest;
-import kerbefake.msg_server.entities.SendMessageRequestBody;
+import kerbefake.msg_server.entities.SendMessageRequestFactory;
 
 import static kerbefake.client.UserInputOutputHandler.promptString;
-import static kerbefake.common.Constants.SERVER_VERSION;
-import static kerbefake.common.CryptoUtils.getIv;
 
 public class SendMessageOperation extends ClientOperation<SendMessageRequest, EmptyResponse, Boolean> {
 
@@ -22,17 +19,10 @@ public class SendMessageOperation extends ClientOperation<SendMessageRequest, Em
     }
 
     @Override
-    protected SendMessageRequest generateRequest() {
-        byte[] iv = getIv();
+    protected SendMessageRequest generateRequest() throws InvalidMessageException {
         String message = promptString("Please provide the message to send to the server", true);
 
-        SendMessageRequestBody sendMessageRequestBody = new SendMessageRequestBody(iv, message);
-        ServerMessageHeader serverMessageHeader = new ServerMessageHeader(SERVER_VERSION, MessageCode.SEND_MESSAGE, sendMessageRequestBody.toLEByteArray().length);
-        SendMessageRequest sendMessageRequest = new SendMessageRequest(serverMessageHeader, sendMessageRequestBody);
-
-        sendMessageRequest.encrypt(session.getSessionKey());
-
-        return sendMessageRequest;
+        return SendMessageRequestFactory.getInstance().setMessage(message).encrypt(session.getSessionKey()).build();
     }
 
     @Override
