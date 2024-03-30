@@ -29,8 +29,17 @@ public final class MessageStream {
     private final int HEADER_SIZE;
 
     private final Thread parentThread;
-    
+
     private final Logger logger;
+
+    /**
+     * Which messages this server accepts.
+     */
+    private MessageCode[] acceptedMessages;
+
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger) throws IOException {
+        this(connectionSocket, isServer, parentThread, logger, null);
+    }
 
     /**
      * Creates a new MessageStream.
@@ -39,12 +48,13 @@ public final class MessageStream {
      * @param isServer         - whether whoever is creating this stream is a server, if it is behavior is slightly different
      * @throws IOException - in case of a problem getting the streams from the socket.
      */
-    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger) throws IOException {
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger, MessageCode[] acceptedMessages) throws IOException {
         this.inputStream = connectionSocket.getInputStream();
         this.outputStream = connectionSocket.getOutputStream();
         this.HEADER_SIZE = isServer ? Constants.REQUEST_HEADER_SIZE : RESPONSE_HEADER_SIZE;
         this.parentThread = parentThread;
         this.logger = logger;
+        this.acceptedMessages = acceptedMessages;
     }
 
     /**
@@ -93,6 +103,21 @@ public final class MessageStream {
             throw new InvalidMessageException("Invalid message code provided.");
         }
 
+        boolean acceptMessage = acceptedMessages == null;
+        if (acceptedMessages != null)
+            for (MessageCode code : acceptedMessages) {
+                acceptMessage |= messageHeader.getMessageCode().getCode() == code.getCode();
+            }
+
+        if (!acceptMessage) {
+            // Read all remaining data to clear the socket before exiting.
+            if(messageHeader.getPayloadSize() > 0) {
+                byte[] garbage = new byte[ messageHeader.getPayloadSize()];
+                int ignored = inputStream.read(garbage);
+            }
+            logger.info("Received a message that should not accept: %s", messageHeader.getMessageCode().getMessageClass().getCanonicalName());
+            return null;
+        }
         // Now we read the body if one exists
         int payloadSize = messageHeader.getPayloadSize();
         byte[] bodyBytes = new byte[payloadSize];

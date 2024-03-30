@@ -1,6 +1,7 @@
 package kerbefake.common;
 
 import kerbefake.auth_server.entities.responses.FailureResponse;
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerRequest;
 import kerbefake.common.errors.InvalidMessageException;
@@ -16,7 +17,12 @@ public abstract class ConnectionHandler implements Runnable {
     
     private final Logger logger;
 
-    public ConnectionHandler(Socket conn, Thread parentThread, Logger logger) {
+    /**
+     * Which messages this connection accepts.
+     */
+    private final MessageCode[] acceptedMessages;
+
+    public ConnectionHandler(Socket conn, Thread parentThread, Logger logger, MessageCode[] acceptedMessages) {
         if (conn == null || !conn.isConnected() || conn.isClosed()) {
             throw new RuntimeException("No socket provided or disconnected socket.");
         }
@@ -26,9 +32,13 @@ public abstract class ConnectionHandler implements Runnable {
         if(logger == null){
             throw new RuntimeException("No logger provided!");
         }
+        if(acceptedMessages == null){
+            throw new RuntimeException("Connection handles must specify which messages they accept");
+        }
         this.conn = conn;
         this.parentThread = parentThread;
         this.logger = logger;
+        this.acceptedMessages = acceptedMessages;
     }
 
     /**
@@ -44,7 +54,7 @@ public abstract class ConnectionHandler implements Runnable {
     public void run() {
         MessageStream messageStream;
         try {
-            messageStream = new MessageStream(conn, true, parentThread, logger);
+            messageStream = new MessageStream(conn, true, parentThread, logger, this.acceptedMessages);
         } catch (IOException e) {
             logger.error("Failed to initialize streams: %s", e.getMessage());
             logger.error(e);

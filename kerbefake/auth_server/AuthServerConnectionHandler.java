@@ -1,6 +1,7 @@
 package kerbefake.auth_server;
 
 import kerbefake.common.ConnectionHandler;
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerRequest;
 
@@ -14,7 +15,10 @@ import static kerbefake.auth_server.AuthServer.authLogger;
 public class AuthServerConnectionHandler extends ConnectionHandler {
 
     public AuthServerConnectionHandler(Socket conn, Thread parentThread) {
-        super(conn, parentThread, authLogger);
+        super(conn, parentThread, authLogger, new MessageCode[]{
+                MessageCode.REGISTER_CLIENT,
+                MessageCode.REQUEST_SYMMETRIC_KEY
+        });
     }
 
     @Override

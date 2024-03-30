@@ -1,10 +1,7 @@
 package kerbefake.msg_server;
 
 import kerbefake.common.ConnectionHandler;
-import kerbefake.common.entities.EncryptedServerMessage;
-import kerbefake.common.entities.ServerMessage;
-import kerbefake.common.entities.ServerRequest;
-import kerbefake.common.entities.Ticket;
+import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidMessageException;
 import kerbefake.msg_server.entities.SubmitTicketRequest;
 
@@ -17,7 +14,10 @@ public class MessageServerConnectionHandler extends ConnectionHandler {
     private final byte[] symKey;
 
     public MessageServerConnectionHandler(Socket conn, Thread parentThread, byte[] symKey) {
-        super(conn, parentThread, msgLogger);
+        super(conn, parentThread, msgLogger, new MessageCode[]{
+                MessageCode.SEND_MESSAGE,
+                MessageCode.SUBMIT_TICKET
+        });
         this.symKey = symKey;
     }
 
