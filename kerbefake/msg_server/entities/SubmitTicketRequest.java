@@ -37,8 +37,9 @@ public class SubmitTicketRequest extends EncryptedServerMessage implements Serve
         }
 
         long expTime = ByteBuffer.wrap(ticket.getExpTime()).order(ByteOrder.LITTLE_ENDIAN).getLong();
-        info("Ticket expired, current time: %d, exp time: %d", System.currentTimeMillis(), expTime);
+        info("Ticket timestamp, current time: %d, exp time: %d", System.currentTimeMillis(), expTime);
         if (System.currentTimeMillis() >= expTime) {
+            error("Ticket expired");
             return failedResponse;
         }
 
