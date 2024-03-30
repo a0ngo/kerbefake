@@ -16,7 +16,6 @@ import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
 public final class RegisterOperation extends ClientOperation<RegisterClientRequest, RegisterClientResponse, String> {
 
     private final char[] plaintextPassword;
-    private final String clientID;
 
     private final String name;
 
@@ -25,7 +24,6 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
         super(connection, RegisterClientResponse.class, null);
         this.name = name;
         this.plaintextPassword = plaintextPassword;
-        this.clientID = clientID;
     }
 
     @Override
