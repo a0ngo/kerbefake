@@ -1,15 +1,21 @@
 package kerbefake.auth_server.entities.responses;
 
+import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.Logger.error;
 
 public class FailureResponse extends ServerMessage {
 
     public FailureResponse(ServerMessageHeader header) {
         super(header, null);
+    }
+
+    public static FailureResponse createUnknownFailureResponse() {
+        return new FailureResponse(new ServerMessageHeader(SERVER_VERSION, MessageCode.UNKNOWN_FAILURE, 0));
     }
 
     @Override

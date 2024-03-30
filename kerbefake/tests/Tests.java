@@ -23,6 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
+import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.Logger.error;
 import static kerbefake.common.Logger.info;
 import static kerbefake.common.Utils.bytesToHexString;
@@ -226,7 +227,7 @@ final class Tests {
         new SecureRandom().nextBytes(nonce);
         GetSymmetricKeyRequestBody body = new GetSymmetricKeyRequestBody(SERVER_ID, nonce);
         GetSymmetricKeyRequest request = new GetSymmetricKeyRequest(
-                new ServerMessageHeader(clientId, (byte) 4, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
+                new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, body.toLEByteArray().length),
                 body
         );
         GetSymmetricKeyResponse response = (GetSymmetricKeyResponse) sendRequestAndGetResponse(stream, request);

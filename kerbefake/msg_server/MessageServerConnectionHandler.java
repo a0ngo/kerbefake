@@ -11,6 +11,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import static kerbefake.common.Constants.SERVER_VERSION;
 import static kerbefake.common.Logger.error;
 
 public class MessageServerConnectionHandler implements Runnable {
@@ -40,7 +41,7 @@ public class MessageServerConnectionHandler implements Runnable {
             return;
         }
 
-        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte) 4, MessageCode.UNKNOWN_FAILURE, 0));
+        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader(SERVER_VERSION, MessageCode.UNKNOWN_FAILURE, 0));
 
         while (!this.parentThread.isInterrupted()) {
             try {

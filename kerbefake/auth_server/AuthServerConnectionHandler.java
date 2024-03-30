@@ -1,9 +1,7 @@
 package kerbefake.auth_server;
 
 import kerbefake.auth_server.entities.responses.FailureResponse;
-import kerbefake.common.entities.MessageCode;
 import kerbefake.common.entities.ServerMessage;
-import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.entities.ServerRequest;
 import kerbefake.common.errors.InvalidMessageException;
 
@@ -41,7 +39,7 @@ public class AuthServerConnectionHandler implements Runnable {
             return;
         }
 
-        FailureResponse unknownFailure = new FailureResponse(new ServerMessageHeader((byte) 4, MessageCode.UNKNOWN_FAILURE, 0));
+        FailureResponse unknownFailure = FailureResponse.createUnknownFailureResponse();
         while (!parentThread.isInterrupted()) {
             try {
                 ServerMessage message = ServerMessage.parse(in);
