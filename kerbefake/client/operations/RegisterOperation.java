@@ -20,16 +20,17 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
 
     private final char[] plaintextPassword;
 
-    public RegisterOperation(ClientConnection connection, char[] plaintextPassword) {
+    private final String name;
+
+    public RegisterOperation(ClientConnection connection, String name, char[] plaintextPassword) {
         // Register doesn't need a client ID
         super(connection, RegisterClientResponse.class, null);
+        this.name = name;
         this.plaintextPassword = plaintextPassword;
     }
 
     @Override
     protected RegisterClientRequest generateRequest() throws InvalidMessageException {
-        String name = getNameFromUser();
-
         return RegisterClientRequestFactory.getInstance().setName(name).setPassword(plaintextPassword).build();
     }
 

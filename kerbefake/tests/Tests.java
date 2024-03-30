@@ -339,7 +339,7 @@ final class Tests {
                 throw new RuntimeException("TEST - ❌ Failed");
             }
             return response;
-        } catch (InvalidMessageException e) {
+        } catch (InvalidMessageException | InterruptedException e) {
             error(e);
             error("TEST - ❌ Failed to parse response due to: %s", e);
         }
@@ -359,8 +359,8 @@ final class Tests {
         Socket authServerSocket = new Socket("127.0.0.1", 1256);
         Socket msgServerSocket = new Socket("127.0.0.1", 1235);
 
-        MessageStream authServerStream = new MessageStream(authServerSocket, false);
-        MessageStream msgServerStream = new MessageStream(msgServerSocket, false);
+        MessageStream authServerStream = new MessageStream(authServerSocket, false, authServerThreadHandle);
+        MessageStream msgServerStream = new MessageStream(msgServerSocket, false, msgServerThreadHandle);
 
         return new TestThreadSocketsAndStreams(authServerThreadHandle, msgServerThreadHandle, authServerSocket, authServerStream, msgServerSocket, msgServerStream);
     }

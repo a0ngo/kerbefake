@@ -40,7 +40,7 @@ public abstract class ConnectionHandler implements Runnable {
     public void run() {
         MessageStream messageStream;
         try {
-            messageStream = new MessageStream(conn, true);
+            messageStream = new MessageStream(conn, true, parentThread);
         } catch (IOException e) {
             error("Failed to initialize streams: %s", e.getMessage());
             error(e);
@@ -64,6 +64,8 @@ public abstract class ConnectionHandler implements Runnable {
                     error("Unable to receive and failed to send message, considering socket as broken, closing connection.");
                     break;
                 }
+                continue;
+            } catch (InterruptedException e){
                 continue;
             }
             if (nextMessage == null) {

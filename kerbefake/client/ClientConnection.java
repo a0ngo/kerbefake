@@ -34,7 +34,7 @@ public class ClientConnection {
     public boolean open() {
         try {
             socket = new Socket(serverAddress, serverPort);
-            messageStream = new MessageStream(socket, false);
+            messageStream = new MessageStream(socket, false, Thread.currentThread());
             return true;
         } catch (IOException e) {
             error(e);
@@ -61,7 +61,7 @@ public class ClientConnection {
         return String.format("%s:%d", socket.getInetAddress().getHostAddress(), socket.getPort());
     }
 
-    public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException {
+    public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException, InterruptedException {
         info("Sending message to server.");
         messageStream.sendMessage(message);
         info("Waiting for server response.");

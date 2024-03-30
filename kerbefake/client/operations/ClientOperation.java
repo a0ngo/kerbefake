@@ -63,7 +63,14 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
                 return null;
             }
 
-            ServerMessage response = conn.send(request);
+            ServerMessage response;
+            try {
+                response = conn.send(request);
+            } catch (InterruptedException e) {
+                error(e);
+                error("Client interrupted while sending a request, can't proceed.");
+                return null;
+            }
             if (response == null) { // Some failure happened when we received the response for the request thus we return null
                 return null;
             }

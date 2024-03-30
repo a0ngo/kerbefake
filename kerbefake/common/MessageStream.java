@@ -29,6 +29,8 @@ public final class MessageStream {
 
     private final int HEADER_SIZE;
 
+    private final Thread parentThread;
+
     /**
      * Creates a new MessageStream.
      *
@@ -36,10 +38,11 @@ public final class MessageStream {
      * @param isServer         - whether whoever is creating this stream is a server, if it is behavior is slightly different
      * @throws IOException - in case of a problem getting the streams from the socket.
      */
-    public MessageStream(Socket connectionSocket, boolean isServer) throws IOException {
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread) throws IOException {
         this.inputStream = connectionSocket.getInputStream();
         this.outputStream = connectionSocket.getOutputStream();
         this.HEADER_SIZE = isServer ? Constants.REQUEST_HEADER_SIZE : RESPONSE_HEADER_SIZE;
+        this.parentThread = parentThread;
     }
 
     /**
@@ -53,9 +56,18 @@ public final class MessageStream {
      *
      * @return - A {@link ServerMessage} that was read from the stream.
      */
-    public ServerMessage readNextMessage() throws InvalidMessageException, IOException {
+    public ServerMessage readNextMessage() throws InvalidMessageException, IOException, InterruptedException {
         ServerMessageHeader messageHeader;
         ServerMessageBody messageBody;
+
+        while (!parentThread.isInterrupted()) {
+            if (inputStream.available() > 0) {
+                break;
+            }
+        }
+        if (parentThread.isInterrupted()) {
+            throw new InterruptedException();
+        }
 
         // Read message header
         byte[] headerBytes = new byte[HEADER_SIZE];
