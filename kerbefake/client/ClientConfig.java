@@ -60,7 +60,7 @@ public final class ClientConfig {
         try {
             this.passwordHash = CryptoUtils.performSha256(password);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+             error(e);
             error("This machine does not support SHA-256, can't proceed, exiting.");
             System.exit(1);
         }
@@ -120,6 +120,8 @@ public final class ClientConfig {
     }
 
     public void clearPassword() {
+        if (password == null)
+            return;
         Arrays.fill(password, (char) 0);
         password = null;
     }
