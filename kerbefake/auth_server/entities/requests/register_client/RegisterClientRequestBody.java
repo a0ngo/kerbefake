@@ -74,18 +74,16 @@ public class RegisterClientRequestBody extends ServerMessageBody {
         if (this.rawBody != null) {
             return this.rawBody;
         }
-        String nameWithNullTermination = this.name+"\0";
-        String passwordWithNullTermination = new String(this.password)+"\0";
 
-        this.rawBody = new byte[nameWithNullTermination.length() + passwordWithNullTermination.length()];
-        byte[] nameBytes = nameWithNullTermination.getBytes();
-        byte[] passBytes = new byte[passwordWithNullTermination.length()];
-        for (int i = 0; i < passwordWithNullTermination.length(); i++) {
-            passBytes[i] = (byte) passwordWithNullTermination.charAt(i);
+        this.rawBody = new byte[this.name.length() + this.password.length];
+        byte[] name = this.name.getBytes();
+        byte[] pass = new byte[password.length];
+        for (int i = 0; i < pass.length; i++) {
+            pass[i] = (byte) password[i];
         }
-        passBytes[passBytes.length-1] = (byte)'\0';
-        System.arraycopy(nameBytes, 0, this.rawBody, 0, nameBytes.length);
-        System.arraycopy(passBytes, 0, this.rawBody, nameBytes.length, passBytes.length);
+
+        System.arraycopy(name, 0, this.rawBody, 0, name.length);
+        System.arraycopy(pass, 0, this.rawBody, name.length, pass.length);
 
         return this.rawBody;
     }
