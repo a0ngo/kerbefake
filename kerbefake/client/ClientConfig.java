@@ -91,8 +91,8 @@ public final class ClientConfig {
                 // Ignoring since we expect only two lines
             }
 
-             if(name == null && clientId == null){
-                 clientLogger.warn("Client configuration file exists but is empty, please remove it.");
+            if (name == null && clientId == null) {
+                clientLogger.warn("Client configuration file exists but is empty, please remove it.");
                 throw new InvalidClientConfigException();
             }
 
@@ -123,15 +123,19 @@ public final class ClientConfig {
     }
 
     public void clearPassword() {
-        if (password == null)
-            return;
+        if (password == null) return;
         Arrays.fill(password, (char) 0);
         password = null;
     }
 
 
     public void storeToFile() throws IOException {
-        if (!Files.exists(Paths.get(CLIENT_CONFIG_FILE_NAME))) {
+        boolean canWrite = !Files.exists(Paths.get(CLIENT_CONFIG_FILE_NAME));
+        if (!canWrite) {
+            BufferedReader reader = new BufferedReader(new FileReader(CLIENT_CONFIG_FILE_NAME));
+            canWrite = reader.readLine() == null;
+        }
+        if (canWrite) {
             BufferedWriter fileWriter = new BufferedWriter(new FileWriter(CLIENT_CONFIG_FILE_NAME));
             fileWriter.write(this.name + "\n");
             fileWriter.write(this.clientIdHex);
