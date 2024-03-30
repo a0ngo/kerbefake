@@ -110,10 +110,10 @@ public final class UserInputOutputHandler {
      */
     public static char[] getPasswordFromUser() {
         info("Please provide your password;");
-        System.out.print("> ");
         if (System.console() == null) {
             warn("Note that we can't obscure the password!");
         }
+        System.out.print("> ");
         return System.console() == null ? inputHandler.next().toCharArray() : System.console().readPassword();
     }
 
