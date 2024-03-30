@@ -91,7 +91,7 @@ public abstract class ServerMessage {
 //     */
 //    private static ServerMessageHeader readHeader(BufferedInputStream in, boolean isResponse) throws InvalidMessageException {
 //        try {
-//            byte[] headerBytes = new byte[isResponse ? Constants.RESPONSE_HEADER_SIZE : Constants.REQUEST_HEADER_SIZE];
+//            byte[] headerBytes = new byte[isResponse ? Constants.REQUEST_HEADER_SIZE : Constants.RESPONSE_HEADER_SIZE];
 //            int readBytes = in.read(headerBytes);
 //
 //            /*

@@ -1,5 +1,6 @@
 package kerbefake.client;
 
+import kerbefake.client.NetworkManager.ServerType;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.client.errors.InvalidClientConfigException;
@@ -29,13 +30,14 @@ public class Client implements Runnable {
     private NetworkManager networkManager;
     private SessionManager sessionManager;
     private ClientState clientState;
+    private final int defaultTimeTillClose = 300;
 
     public static final Logger clientLogger = Logger.getLogger(LoggerType.CLIENT_LOGGER);
 
     public Client() {
         try {
             clientConfig = ClientConfig.load();
-            clientState = AFTER_REGISTER;
+            clientState = BEFORE_REGISTER;
         } catch (InvalidClientConfigException e) {
             if (e.getMessage() != null && !e.getMessage().equals(new InvalidClientConfigException().getMessage())) {
                 clientLogger.error(e);
@@ -52,7 +54,10 @@ public class Client implements Runnable {
         sessionManager = SessionManager.getInstance();
     }
 
-
+    public void openAuthConnection(String ip,int port)
+    {
+        networkManager.openConnection(ServerType.AUTH,ip,port, defaultTimeTillClose);
+    }
     private int getOperationToPerform() {
         String message;
         switch (clientState) {
@@ -100,7 +105,7 @@ public class Client implements Runnable {
             return false;
         }
         String name = getNameFromUser();
-        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword()).perform();
+        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword(),this.clientConfig.getClientIdHex()).perform();
         if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             clientLogger.error("Register operation failed.");
             return false;

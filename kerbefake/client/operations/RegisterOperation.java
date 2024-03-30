@@ -19,7 +19,7 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
 
     private final String name;
 
-    public RegisterOperation(ClientConnection connection, String name, char[] plaintextPassword) {
+    public RegisterOperation(ClientConnection connection, String name, char[] plaintextPassword, String clientID) {
         // Register doesn't need a client ID
         super(connection, RegisterClientResponse.class, null);
         this.name = name;
