@@ -64,6 +64,7 @@ public final class MessageStream {
 
         // No data is waiting on stream, stopping.
         if (readBytes == -1) {
+            debug("No bytes waiting on stream.");
             return null;
         }
 
@@ -81,16 +82,14 @@ public final class MessageStream {
 
         // Now we read the body if one exists
         int payloadSize = messageHeader.getPayloadSize();
-        if (payloadSize == 0) {
-            return null;
-        }
-
         byte[] bodyBytes = new byte[payloadSize];
-
-        readBytes = inputStream.read(bodyBytes);
-        if (readBytes != payloadSize) {
-            error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
-            return null;
+        if (payloadSize != 0) {
+            debug("Reading payload for %d bytes", payloadSize);
+            readBytes = inputStream.read(bodyBytes);
+            if (readBytes != payloadSize) {
+                error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
+                return null;
+            }
         }
 
         MessageCode messageCode = messageHeader.getMessageCode();
@@ -104,13 +103,14 @@ public final class MessageStream {
          * (ServerMessageHeader header, ServerMessageBody body).
          */
         try {
-            if (bodyClass != null) {
+            if (bodyClass != null && payloadSize > 0) {
                 messageBody = bodyClass.getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
                 return messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass()).newInstance(messageHeader, messageCode.getBodyClass().cast(messageBody));
+            } else if (bodyClass != null) {
+                error("Provided body type however no payload provided as part of the message.");
+                return null;
             }
             return messageClass.getConstructor(ServerMessageHeader.class).newInstance(messageHeader);
-
-
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
             error(e);
