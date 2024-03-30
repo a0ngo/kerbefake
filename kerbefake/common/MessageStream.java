@@ -14,7 +14,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
 import static kerbefake.common.Constants.RESPONSE_HEADER_SIZE;
-import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
 
 /**
@@ -30,6 +29,8 @@ public final class MessageStream {
     private final int HEADER_SIZE;
 
     private final Thread parentThread;
+    
+    private final Logger logger;
 
     /**
      * Creates a new MessageStream.
@@ -38,11 +39,12 @@ public final class MessageStream {
      * @param isServer         - whether whoever is creating this stream is a server, if it is behavior is slightly different
      * @throws IOException - in case of a problem getting the streams from the socket.
      */
-    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread) throws IOException {
+    public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger) throws IOException {
         this.inputStream = connectionSocket.getInputStream();
         this.outputStream = connectionSocket.getOutputStream();
         this.HEADER_SIZE = isServer ? Constants.REQUEST_HEADER_SIZE : RESPONSE_HEADER_SIZE;
         this.parentThread = parentThread;
+        this.logger = logger;
     }
 
     /**
@@ -75,19 +77,19 @@ public final class MessageStream {
 
         // No data is waiting on stream, stopping.
         if (readBytes == -1) {
-//            debug("No bytes waiting on stream.");
+//            logger.debug("No bytes waiting on stream.");
             return null;
         }
 
         if (readBytes != HEADER_SIZE) {
-            error("Failed to read header, expected 23 bytes but got %d", readBytes);
+            logger.error("Failed to read header, expected 23 bytes but got %d", readBytes);
             throw new InvalidMessageException(String.format("Failed to read header, expected 23 bytes but got %d", readBytes));
         }
 
         try {
             messageHeader = ServerMessageHeader.parseHeader(byteArrayToLEByteBuffer(headerBytes).array());
         } catch (InvalidMessageCodeException e) {
-            error(e);
+            logger.error(e);
             throw new InvalidMessageException("Invalid message code provided.");
         }
 
@@ -95,10 +97,10 @@ public final class MessageStream {
         int payloadSize = messageHeader.getPayloadSize();
         byte[] bodyBytes = new byte[payloadSize];
         if (payloadSize != 0) {
-            debug("Reading payload for %d bytes", payloadSize);
+            logger.debug("Reading payload for %d bytes", payloadSize);
             readBytes = inputStream.read(bodyBytes);
             if (readBytes != payloadSize) {
-                error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
+                logger.error("Failed to read body, expected %d bytes, but got %d", payloadSize, readBytes);
                 return null;
             }
         }
@@ -106,7 +108,7 @@ public final class MessageStream {
         MessageCode messageCode = messageHeader.getMessageCode();
         Class<? extends ServerMessage> messageClass = messageCode.getMessageClass();
         Class<? extends ServerMessageBody> bodyClass = messageCode.getBodyClass();
-        debug("Trying to parse message body for code: %d ", messageCode.getCode());
+        logger.debug("Trying to parse message body for code: %d ", messageCode.getCode());
 
         /*
          * Here we finish building a message according to the specified message class in MessageCode.
@@ -118,22 +120,22 @@ public final class MessageStream {
                 messageBody = bodyClass.getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
                 return messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass()).newInstance(messageHeader, messageCode.getBodyClass().cast(messageBody));
             } else if (bodyClass != null) {
-                error("Provided body type however no payload provided as part of the message.");
+                logger.error("Provided body type however no payload provided as part of the message.");
                 return null;
             }
             return messageClass.getConstructor(ServerMessageHeader.class).newInstance(messageHeader);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
-            error(e);
+            logger.errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
+            logger.error(e);
             throw new InvalidMessageException(messageCode);
 
         } catch (IOException | InvocationTargetException e) {
-            error("Failed to read request body from input stream due to: %s", e);
-            error(e);
+            logger.error("Failed to read request body from input stream due to: %s", e);
+            logger.error(e);
             return null;
         } catch (Exception e) {
-            error("Unknown error occurred: %s", e.getMessage());
-            error(e);
+            logger.error("Unknown error occurred: %s", e.getMessage());
+            logger.error(e);
             return null;
         }
     }
@@ -149,11 +151,11 @@ public final class MessageStream {
             outputStream.write(message.toLEByteArray());
             return true;
         } catch (InvalidMessageException e) {
-            error(e);
-            error(e.getMessage());
+            logger.error(e);
+            logger.error(e.getMessage());
         } catch (IOException e) {
-//            error("Failed to send message due to: %s", e.getMessage());
-            error(e);
+//            logger.error("Failed to send message due to: %s", e.getMessage());
+            logger.error(e);
         }
         return false;
     }

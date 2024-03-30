@@ -1,14 +1,18 @@
 package kerbefake.auth_server;
 
+import kerbefake.common.Logger;
+
 import javax.net.ServerSocketFactory;
 import java.io.*;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static kerbefake.common.Constants.DEFAULT_PORT_AUTH_SERVER;
-import static kerbefake.common.Logger.error;
 
 /**
  * A class which handles all the functionality of the authentication server.
@@ -16,6 +20,8 @@ import static kerbefake.common.Logger.error;
 public class AuthServer {
 
     private final ArrayList<Thread> connectionHandles = new ArrayList<>();
+    
+    public static final Logger authLogger = Logger.getLogger(Logger.LoggerType.AUTH_SERVER_LOGGER);
 
     /**
      * Starts the authentication server
@@ -30,7 +36,7 @@ public class AuthServer {
             socket.bind(new InetSocketAddress("127.0.0.1", port));
             socket.setSoTimeout(1000); // 1 second timeout
         } catch (IOException e) {
-            error("Failed to create or bind socket to default port (%d), due to: %s", port, e);
+            authLogger.error("Failed to create or bind socket to default port (%d), due to: %s", port, e);
             return;
         }
 
@@ -58,7 +64,7 @@ public class AuthServer {
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (IOException e) {
-                error("Failed to accept new connection due to: %s", e);
+                authLogger.error("Failed to accept new connection due to: %s", e);
             }
 
             Thread threadHandle = new Thread(new AuthServerConnectionHandler(conn, Thread.currentThread()));
@@ -70,7 +76,7 @@ public class AuthServer {
         try {
             socket.close();
         } catch (IOException e) {
-            error("Failed to close socket due to: %s", e);
+            authLogger.error("Failed to close socket due to: %s", e);
             throw new RuntimeException(e);
         }
     }
@@ -88,11 +94,11 @@ public class AuthServer {
 
             return Integer.parseInt(portStr);
         } catch (FileNotFoundException e) {
-            error("No file port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
+            authLogger.error("No file port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
         } catch (IOException e) {
-            error("No data in port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
+            authLogger.error("No data in port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
         } catch (NumberFormatException e) {
-            error("Invalid port number in port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
+            authLogger.error("Invalid port number in port.info, using default port (%d)", DEFAULT_PORT_AUTH_SERVER);
         }
         return DEFAULT_PORT_AUTH_SERVER;
     }

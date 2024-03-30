@@ -12,10 +12,9 @@ import kerbefake.common.errors.InvalidMessageException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
 import static kerbefake.common.CryptoUtils.getIv;
 import static kerbefake.common.CryptoUtils.getSecureRandomBytes;
-import static kerbefake.common.Logger.*;
-import static kerbefake.common.Utils.bytesToHexString;
 
 public class GetSymmetricKeyRequest extends ServerMessage implements ServerRequest {
     public GetSymmetricKeyRequest(ServerMessageHeader header, GetSymmetricKeyRequestBody body) {
@@ -29,12 +28,12 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
         ClientEntry client;
         MessageServerEntry server;
         if ((client = peers.getClient(header.getClientID())) == null) {
-            error("Client ID is not known!");
+            authLogger.error("Client ID is not known!");
             return failure;
         }
 
         if (this.header == null || this.body == null) {
-            error("No header or body detected for get symmetric key request.");
+            authLogger.error("No header or body detected for get symmetric key request.");
             return failure;
         }
 
@@ -42,7 +41,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
 
         String serverId = body.getServerId();
         if ((server = peers.getSever(serverId)) == null) {
-            error("Server ID is not known!");
+            authLogger.error("Server ID is not known!");
             return failure;
         }
 
@@ -54,7 +53,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
 
         long time = System.currentTimeMillis();
         long expTime = time + 10 * 60 * 1000; // 10 minutes
-        info("Exp time: %d", expTime);
+        authLogger.info("Exp time: %d", expTime);
 
         byte[] creationTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(time).array();
         byte[] expTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(expTime).array();
@@ -63,12 +62,12 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
         Ticket ticket = new Ticket().setTicketIv(ticketIv).setClientId(header.getClientID()).setServerId(serverId).setCreationTime(creationTimeArr).setAesKey(aesKey).setExpTime(expTimeArr);
 
         if (!key.encrypt(client.getPasswordHash())) {
-            error("Failed to encrypt EncryptedKey field for response");
+            authLogger.error("Failed to encrypt EncryptedKey field for response");
             return failure;
         }
 
         if (!ticket.encrypt(server.getSymmetricKey())) {
-            error("Failed to encrypt Ticket field for response");
+            authLogger.error("Failed to encrypt Ticket field for response");
             return failure;
         }
 

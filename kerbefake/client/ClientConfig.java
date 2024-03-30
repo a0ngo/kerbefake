@@ -10,10 +10,9 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.CLIENT_CONFIG_FILE_NAME;
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.warn;
 
 public final class ClientConfig {
 
@@ -59,8 +58,8 @@ public final class ClientConfig {
         try {
             this.passwordHash = CryptoUtils.performSha256(password);
         } catch (NoSuchAlgorithmException e) {
-            error(e);
-            error("This machine does not support SHA-256, can't proceed, exiting.");
+            clientLogger.error(e);
+            clientLogger.error("This machine does not support SHA-256, can't proceed, exiting.");
             System.exit(1);
         }
     }
@@ -86,14 +85,14 @@ public final class ClientConfig {
             try {
                 String additionalRead = input.readLine();
                 if (additionalRead != null && !additionalRead.isEmpty()) {
-                    warn("Client configuration has more than 2 lines, trying to use the first two lines. Please remove empty lines from file.");
+                    clientLogger.warn("Client configuration has more than 2 lines, trying to use the first two lines. Please remove empty lines from file.");
                 }
             } catch (IOException e) {
                 // Ignoring since we expect only two lines
             }
 
              if(name == null && clientId == null){
-                warn("Client configuration file exists but is empty, please remove it.");
+                 clientLogger.warn("Client configuration file exists but is empty, please remove it.");
                 throw new InvalidClientConfigException();
             }
 
@@ -109,7 +108,7 @@ public final class ClientConfig {
         } catch (FileNotFoundException e) {
             throw new InvalidClientConfigException();
         } catch (IOException e) {
-            error(e);
+            clientLogger.error(e);
             throw new InvalidClientConfigException(String.format("Failed to read client configuration due to: %s", e.getMessage()));
         }
     }
@@ -141,7 +140,6 @@ public final class ClientConfig {
             return;
         }
 
-        warn("Tried to store client config in file but file already exists, not storing.");
-
+        clientLogger.warn("Tried to store client config in file but file already exists, not storing.");
     }
 }

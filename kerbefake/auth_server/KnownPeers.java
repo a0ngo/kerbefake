@@ -1,9 +1,10 @@
 package kerbefake.auth_server;
 
-import kerbefake.auth_server.errors.InvalidClientDataException;
-import kerbefake.msg_server.errors.InvalidMessageServerDataException;
 import kerbefake.auth_server.entities.ClientEntry;
 import kerbefake.auth_server.entities.MessageServerEntry;
+import kerbefake.auth_server.errors.InvalidClientDataException;
+import kerbefake.common.Logger;
+import kerbefake.msg_server.errors.InvalidMessageServerDataException;
 
 import java.io.*;
 import java.util.Collections;
@@ -12,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
 import static kerbefake.common.Constants.CLIENTS_FILE_NAME;
 import static kerbefake.common.Constants.SERVER_CONFIG_FILE_NAME;
-import static kerbefake.common.Logger.*;
 
 public final class KnownPeers {
 
@@ -24,15 +25,17 @@ public final class KnownPeers {
 
     private final Map<String, MessageServerEntry> servers;
 
+    private Logger logger = authLogger;
+
     private KnownPeers() {
         clients = Collections.synchronizedMap(new HashMap<>());
         servers = Collections.synchronizedMap(new HashMap<>());
         readAllClients();
-        if(clients.size() == 0){
+        if (clients.size() == 0) {
             try {
                 new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, false)).close();
             } catch (IOException e) {
-                error("Couldn't reset client file.");
+                logger.error("Couldn't reset client file.");
                 throw new RuntimeException(e);
             }
         }
@@ -60,7 +63,7 @@ public final class KnownPeers {
         try {
             clientReader = new BufferedReader(new FileReader(CLIENTS_FILE_NAME));
         } catch (FileNotFoundException e) {
-            info("No clients file found.");
+            logger.info("No clients file found.");
             return;
         }
         String clientLine;
@@ -68,7 +71,7 @@ public final class KnownPeers {
             try {
                 clientLine = clientReader.readLine();
             } catch (IOException e) {
-                error("Failed to read line from file: %s", e);
+                logger.error("Failed to read line from file: %s", e);
                 // We assume that if there was a read issue we can assume the file is corrupted therefore we won't be using the data in the file.
                 clients.clear();
                 return;
@@ -82,7 +85,7 @@ public final class KnownPeers {
                 ClientEntry client = ClientEntry.parseClient(clientLine);
                 clients.put(client.getId(), client);
             } catch (InvalidClientDataException e) {
-                error("Failed to parse client data, assuming corrupted file and returning no clients registered, due to: %s", e);
+                logger.error("Failed to parse client data, assuming corrupted file and returning no clients registered, due to: %s", e);
                 clients.clear();
                 return;
             }
@@ -100,7 +103,7 @@ public final class KnownPeers {
         try {
             serverReader = new BufferedReader(new FileReader(SERVER_CONFIG_FILE_NAME));
         } catch (FileNotFoundException e) {
-            error("Unable to find msg.info file, no messaging server provided.");
+            logger.error("Unable to find msg.info file, no messaging server provided.");
             throw new RuntimeException(e);
         }
 
@@ -111,14 +114,14 @@ public final class KnownPeers {
             id = serverReader.readLine();
             b64SymKey = serverReader.readLine();
         } catch (IOException e) {
-            error("Failed to read line from msg.info file, must have 4 lines in the following order:\nIP:port\nName\nId (hex)\nBase64 Symmetric key\nFailure happened due to: %s", e);
+            logger.error("Failed to read line from msg.info file, must have 4 lines in the following order:\nIP:port\nName\nId (hex)\nBase64 Symmetric key\nFailure happened due to: %s", e);
             throw new RuntimeException(e);
         }
 
         try {
             servers.put(id, MessageServerEntry.parseMessageEntryData(ipAddr, name, id, b64SymKey));
         } catch (InvalidMessageServerDataException e) {
-            error("Failed to parse message server entry due to %e", e);
+            logger.error("Failed to parse message server entry due to %e", e);
             throw new RuntimeException(e);
         }
     }
@@ -127,12 +130,12 @@ public final class KnownPeers {
      * Tries to flush the entire known client list to a file (resets the file)
      */
     private void flushClientsFile() {
-        debug("Flushing known clients to file");
+        logger.debug("Flushing known clients to file");
         BufferedWriter writer;
         try {
             writer = new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, false));
         } catch (IOException e) {
-            error("Failed to open file to write clients due to: %s", e);
+            logger.error("Failed to open file to write clients due to: %s", e);
             return;
         }
         synchronized (clients) {
@@ -140,13 +143,13 @@ public final class KnownPeers {
                 try {
                     writer.write(v.toString() + "\n");
                 } catch (IOException e) {
-                    error("Failed to write client to file due to: %s", e);
+                    logger.error("Failed to write client to file due to: %s", e);
                 }
             });
             try {
                 writer.flush();
             } catch (IOException e) {
-                error("Failed to flush client file");
+                logger.error("Failed to flush client file");
             }
         }
     }
@@ -161,10 +164,10 @@ public final class KnownPeers {
      * @throws RuntimeException - in case of a UUID collision
      */
     public synchronized boolean tryAddClientEntry(ClientEntry entry) {
-        debug("Trying to adding client entry: %s %s", entry.getId(), entry.getName());
+        logger.debug("Trying to adding client entry: %s %s", entry.getId(), entry.getName());
 
         if (clients.values().stream().anyMatch(v -> v.getName().equals(entry.getName()))) {
-            warn("Client with the same name already found.");
+            logger.warn("Client with the same name already found.");
             return false;
         }
 
@@ -172,7 +175,7 @@ public final class KnownPeers {
         try {
             writer = new BufferedWriter(new FileWriter(CLIENTS_FILE_NAME, true));
         } catch (IOException e) {
-            error("Failed to open file to write clients due to: %s", e);
+            logger.error("Failed to open file to write clients due to: %s", e);
             return false;
         }
         if (clients.containsKey(entry.getId())) {
@@ -185,7 +188,7 @@ public final class KnownPeers {
             writer.write(entry + "\n");
             writer.flush();
         } catch (IOException e) {
-            error("Failed to write client to file due to: %s", e);
+            logger.error("Failed to write client to file due to: %s", e);
             return false;
         }
 
@@ -195,7 +198,7 @@ public final class KnownPeers {
 
     // TODO: Code duplication cleanup
     public synchronized ClientEntry getClient(String clientID) {
-        debug("Trying to fetch client: %s", clientID);
+        logger.debug("Trying to fetch client: %s", clientID);
         List<ClientEntry> matchingClients = clients.values().stream().filter(v -> v.getId().equals(clientID)).collect(Collectors.toList());
         if (matchingClients.size() > 1) {
             throw new RuntimeException("More than a single client with the same ID found!");
@@ -203,10 +206,10 @@ public final class KnownPeers {
         return matchingClients.size() == 0 ? null : matchingClients.get(0);
     }
 
-    public synchronized MessageServerEntry getSever(String serverId){
-        debug("Trying to fetch server for ID: %s", serverId);
+    public synchronized MessageServerEntry getSever(String serverId) {
+        logger.debug("Trying to fetch server for ID: %s", serverId);
         List<MessageServerEntry> matchingServers = servers.values().stream().filter(v -> v.getId().equals(serverId)).collect(Collectors.toList());
-        if(matchingServers.size() > 1){
+        if (matchingServers.size() > 1) {
             throw new RuntimeException("More than a single server with the same ID found!");
         }
 

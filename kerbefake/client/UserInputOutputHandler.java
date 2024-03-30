@@ -3,8 +3,8 @@ package kerbefake.client;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
-import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.hexStringToByteArray;
 
 /**
@@ -40,7 +40,7 @@ public final class UserInputOutputHandler {
     public static String promptString(String message, boolean notEmpty) {
         String response = (String) prompt(message, String.class);
         while (notEmpty && (response == null || response.isEmpty())) {
-            error("Please provide a non-empty string.");
+            clientLogger.error("Please provide a non-empty string.");
             response = inputHandler.next();
         }
 
@@ -59,11 +59,11 @@ public final class UserInputOutputHandler {
 
         int response = (int) prompt(message, Integer.class);
         if (startRange > endRange) {
-            warn("Range provided is invalid (%d - %d), returning user response", startRange, endRange);
+            clientLogger.warn("Range provided is invalid (%d - %d), returning user response", startRange, endRange);
             return response;
         }
         while ((startRange != -1 && endRange != -1) && (response < startRange || response > endRange)) {
-            error("Please provide an integer between %d and %d", startRange, endRange);
+            clientLogger.error("Please provide an integer between %d and %d", startRange, endRange);
             response = inputHandler.nextInt();
         }
 
@@ -99,7 +99,7 @@ public final class UserInputOutputHandler {
             return false;
         } else {
             if (!valueType.equals(String.class))
-                error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
+                clientLogger.error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
             return inputHandler.next();
         }
     }
@@ -109,9 +109,9 @@ public final class UserInputOutputHandler {
      * in which case we need it for the registration operation.
      */
     public static char[] getPasswordFromUser() {
-        info("Please provide your password;");
+        clientLogger.info("Please provide your password;");
         if (System.console() == null) {
-            warn("Note that we can't obscure the password!");
+            clientLogger.warn("Note that we can't obscure the password!");
         }
         System.out.print("> ");
         return System.console() == null ? inputHandler.next().toCharArray() : System.console().readPassword();
@@ -164,11 +164,11 @@ public final class UserInputOutputHandler {
         do {
             if (serverId.length() == ID_HEX_LENGTH_CHARS) {
                 if (hexStringToByteArray(serverId) == null)
-                    error("Provided server ID is not a 32 byte hex string, please try again.");
+                    clientLogger.error("Provided server ID is not a 32 byte hex string, please try again.");
                 else
                     break;
             } else {
-                error("Provided server ID is not a 32 byte hex string, please try again.");
+                clientLogger.error("Provided server ID is not a 32 byte hex string, please try again.");
             }
             serverId = inputHandler.next();
         } while (true);

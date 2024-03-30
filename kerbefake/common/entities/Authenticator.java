@@ -1,12 +1,13 @@
 package kerbefake.common.entities;
 
 import kerbefake.common.CryptoUtils;
+import kerbefake.common.Logger;
 import kerbefake.common.errors.InvalidMessageException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.common.Logger.commonLogger;
 import static kerbefake.common.Utils.*;
 
 public class Authenticator extends EncryptedServerMessageBody {
@@ -31,7 +32,7 @@ public class Authenticator extends EncryptedServerMessageBody {
     }
 
 
-    public Authenticator(byte[] iv, String clientId, String serverId, long creationTime) throws InvalidMessageException {
+    public Authenticator(byte[] iv, String clientId, String serverId, long creationTime) {
         this(iv, hexStringToByteArray(clientId), hexStringToByteArray(serverId), ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(creationTime).array());
     }
 
@@ -91,7 +92,7 @@ public class Authenticator extends EncryptedServerMessageBody {
             this.encryptedData = CryptoUtils.encrypt(key, this.iv, dataToEncrypt);
             return true;
         } catch (RuntimeException e) {
-            error("Encryption failed due to: %s", e);
+            commonLogger.error("Encryption failed due to: %s", e);
             return false;
         }
     }
@@ -108,7 +109,7 @@ public class Authenticator extends EncryptedServerMessageBody {
         try {
             byte[] decryptedData = CryptoUtils.decrypt(key, this.iv, this.encryptedData);
             if (decryptedData.length != DATA_DECRYPTED_SIZE) {
-                error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
+                commonLogger.error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
                 return false;
             }
             this.version = decryptedData[0];
@@ -124,7 +125,7 @@ public class Authenticator extends EncryptedServerMessageBody {
 
             return true;
         } catch (RuntimeException e) {
-            error("Decryption failed due to: %s", e);
+            commonLogger.error("Decryption failed due to: %s", e);
             return false;
         }
     }

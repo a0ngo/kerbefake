@@ -6,13 +6,15 @@ import kerbefake.common.entities.ServerRequest;
 
 import java.net.Socket;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
+
 /**
  * A connection handler that handles requests for the auth server.
  */
 public class AuthServerConnectionHandler extends ConnectionHandler {
 
     public AuthServerConnectionHandler(Socket conn, Thread parentThread) {
-        super(conn, parentThread);
+        super(conn, parentThread, authLogger);
     }
 
     @Override

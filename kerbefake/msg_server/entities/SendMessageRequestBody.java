@@ -9,9 +9,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import static kerbefake.common.Logger.error;
 import static kerbefake.common.Utils.assertNonZeroedByteArrayOfLengthN;
 import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.msg_server.MessageServer.msgLogger;
 
 public class SendMessageRequestBody extends EncryptedServerMessageBody {
 
@@ -47,8 +47,8 @@ public class SendMessageRequestBody extends EncryptedServerMessageBody {
             this.messageSize = this.encryptedData.length;
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            error("Encryption failed due to: %s", e);
+            msgLogger.error(e);
+            msgLogger.error("Encryption failed due to: %s", e);
             return false;
         }
     }
@@ -64,7 +64,7 @@ public class SendMessageRequestBody extends EncryptedServerMessageBody {
             this.message = new String(decryptedMessage, StandardCharsets.UTF_8);
             return true;
         } catch (Exception e) {
-            error("Decryption failed due to: %s", e);
+            msgLogger.error("Decryption failed due to: %s", e);
             return false;
         }
     }

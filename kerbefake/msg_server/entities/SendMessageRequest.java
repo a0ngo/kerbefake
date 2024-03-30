@@ -3,7 +3,7 @@ package kerbefake.msg_server.entities;
 import kerbefake.common.entities.*;
 import kerbefake.common.errors.InvalidMessageException;
 
-import static kerbefake.common.Logger.print;
+import static kerbefake.msg_server.MessageServer.msgLogger;
 
 public class SendMessageRequest extends EncryptedServerMessage implements ServerRequest {
     public SendMessageRequest(ServerMessageHeader header, SendMessageRequestBody body) {
@@ -20,7 +20,7 @@ public class SendMessageRequest extends EncryptedServerMessage implements Server
         if (body.isEncrypted()) {
             throw new RuntimeException("Message was not decrypted before execution");
         }
-        print("Message from user (%s): %s\n", this.header.getClientID(), body.getMessage());
+        msgLogger.print("Message from user (%s): %s\n", this.header.getClientID(), body.getMessage());
 
         return new EmptyResponse(this.header.toResponseHeader(MessageCode.SEND_MESSAGE_SUCCESS, 0));
     }

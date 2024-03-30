@@ -7,11 +7,8 @@ import kerbefake.auth_server.entities.responses.register_client.RegisterClientRe
 import kerbefake.client.ClientConnection;
 import kerbefake.common.errors.InvalidMessageException;
 
-import java.util.Arrays;
-
-import static kerbefake.client.UserInputOutputHandler.getNameFromUser;
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
-import static kerbefake.common.Logger.error;
 
 /**
  * This class
@@ -37,7 +34,7 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
     @Override
     protected String validateResponse(RegisterClientResponse response) {
         if (response.getBody() == null) {
-            error("Received response but missing response body, can't proceed, please contact server admin.");
+            clientLogger.error("Received response but missing response body, can't proceed, please contact server admin.");
             return null;
         }
 
@@ -45,7 +42,7 @@ public final class RegisterOperation extends ClientOperation<RegisterClientReque
         String clientId = responseBody.getId();
 
         if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
-            error("Invalid client ID received in the response, can't proceed, received: %s", clientId);
+            clientLogger.error("Invalid client ID received in the response, can't proceed, received: %s", clientId);
             return null;
         }
 

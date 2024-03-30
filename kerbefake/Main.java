@@ -8,7 +8,7 @@ import kerbefake.msg_server.MessageServer;
 import java.io.IOException;
 import java.util.Scanner;
 
-import static kerbefake.common.Logger.*;
+import static kerbefake.common.Logger.commonLogger;
 
 public class Main {
 
@@ -19,7 +19,7 @@ public class Main {
         Scanner userInputScanner = new Scanner(System.in);
         try {
             do {
-                print("Please select mode of operation:\n1) Client mode\n2) Auth Server\n3) Messaging Server");
+                commonLogger.print("Please select mode of operation:\n1) Client mode\n2) Auth Server\n3) Messaging Server");
                 modeSelection = userInputScanner.nextInt();
                 switch (modeSelection) {
                     case Constants.MODE_CLIENT:
@@ -36,12 +36,12 @@ public class Main {
                             msgServerThread = new Thread(msgServer::start);
                             msgServerThread.start();
                         } catch (IOException e) {
-                            error("Failed to start message server due to: %s", e);
+                            commonLogger.error("Failed to start message server due to: %s", e);
                             return;
                         }
                         break;
                     default:
-                        info("Provided invalid input, exiting");
+                        commonLogger.info("Provided invalid input, exiting");
                         return;
                 }
             } while (true);

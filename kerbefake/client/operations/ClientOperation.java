@@ -7,10 +7,10 @@ import kerbefake.common.errors.InvalidMessageException;
 
 import java.io.IOException;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.ClientConstants.REQUEST_FAILED;
 import static kerbefake.common.Constants.ResponseCodes.REGISTER_CLIENT_FAILURE_CODE;
 import static kerbefake.common.Constants.ResponseCodes.UNKNOWN_FAILURE_CODE;
-import static kerbefake.common.Logger.error;
 
 /**
  * An abstract class that indicates something is an operation performed by the client.
@@ -67,8 +67,8 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
             try {
                 response = conn.send(request);
             } catch (InterruptedException e) {
-                error(e);
-                error("Client interrupted while sending a request, can't proceed.");
+                clientLogger.error(e);
+                clientLogger.error("Client interrupted while sending a request, can't proceed.");
                 return null;
             }
             if (response == null) { // Some failure happened when we received the response for the request thus we return null
@@ -79,13 +79,13 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
                 short responseCode = response.getHeader().getMessageCode().getCode();
                 switch (responseCode) {
                     case UNKNOWN_FAILURE_CODE:
-                        error(REQUEST_FAILED);
+                        clientLogger.error(REQUEST_FAILED);
                         return null;
                     case REGISTER_CLIENT_FAILURE_CODE:
-                        error("Client registration failed on server.");
+                        clientLogger.error("Client registration failed on server.");
                         return null;
                     default:
-                        error("Received unknown response code: %d - can't proceed.", response.getHeader().getMessageCode().getCode());
+                        clientLogger.error("Received unknown response code: %d - can't proceed.", response.getHeader().getMessageCode().getCode());
                         return null;
                 }
             }
@@ -94,17 +94,17 @@ public abstract class ClientOperation<REQ extends ServerMessage, RES extends Ser
             try {
                 properResponse = responseClass.cast(response);
             } catch (ClassCastException e) {
-                error("Received unknown response, can't proceed, response is of type %s, printing response:\n %s", response.getClass().getCanonicalName(), response.toString());
+                clientLogger.error("Received unknown response, can't proceed, response is of type %s, printing response:\n %s", response.getClass().getCanonicalName(), response.toString());
                 return null;
             }
 
             return validateResponse(properResponse);
         } catch (IOException e) {
-            error(e);
-            error("Failed to send a request to the auth server due to: %s.", e.getMessage());
+            clientLogger.error(e);
+            clientLogger.error("Failed to send a request to the auth server due to: %s.", e.getMessage());
         } catch (InvalidMessageException e) {
-            error(e);
-            error("Failed to decode message from server due to: %s\nPlease forward this to your server admin.", e.getMessage());
+            clientLogger.error(e);
+            clientLogger.error("Failed to decode message from server due to: %s\nPlease forward this to your server admin.", e.getMessage());
         }
 
         return null;

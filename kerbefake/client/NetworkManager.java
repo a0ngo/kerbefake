@@ -5,9 +5,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.client.UserInputOutputHandler.getServerAddress;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.warn;
 
 /**
  * This class is responsible for handling all the connections and sessions that a client creates.
@@ -18,9 +17,9 @@ public final class NetworkManager {
     public static final int DEFAULT_TIME_TILL_CLOSE = 300 * 1000;
     private static NetworkManager instance;
 
-    private Map<ServerType, ConnectionDetails> connections;
+    private final Map<ServerType, ConnectionDetails> connections;
 
-    private Timer terminationTimer;
+    private final Timer terminationTimer;
 
     public static NetworkManager getInstance() {
         return instance == null ? new NetworkManager() : instance;
@@ -82,7 +81,7 @@ public final class NetworkManager {
                     existingConnectionDetails.terminate();
                     connections.remove(type);
                 } else if (existingConnection.getServerAddress().equals(String.format("%s:%d", ip, port))) {
-                    warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
+                    clientLogger.warn("Tried to open a connection to a server that we already have an open connection to (%s:%d) using existing connection.", ip, port);
                     return existingConnection;
                 } else {
                     // We already have a connection open to some server which is not the same ip and port, we force the closure of it and open a new one.
@@ -96,7 +95,7 @@ public final class NetworkManager {
         boolean opened = connection.open();
 
         if (!opened) {
-            error("Failed to open a connection to %s:%d", ip, port);
+            clientLogger.error("Failed to open a connection to %s:%d", ip, port);
             return null;
         }
 
@@ -127,7 +126,7 @@ public final class NetworkManager {
 
         ClientConnection conn = connDetails.connection;
         if (!conn.isOpen()) {
-            error("Connection was closed, will try to re-open");
+            clientLogger.error("Connection was closed, will try to re-open");
             connections.remove(serverType);
             String[] addressComponents = conn.getServerAddress().split(":");
             String ip = addressComponents[0];
@@ -167,7 +166,7 @@ public final class NetworkManager {
 
         private ClientConnection connection;
 
-        private int timeTillTermination;
+        private final int timeTillTermination;
         // TODO: Add session
 
 

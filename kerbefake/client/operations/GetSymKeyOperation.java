@@ -9,9 +9,9 @@ import kerbefake.common.entities.EncryptedKey;
 import kerbefake.common.entities.Ticket;
 import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.client.Client.clientLogger;
 import static kerbefake.common.Constants.NONCE_SIZE;
 import static kerbefake.common.CryptoUtils.getSecureRandomBytes;
-import static kerbefake.common.Logger.error;
 import static kerbefake.common.Utils.hexStringToByteArray;
 
 public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, GetSymmetricKeyResponse, GetSymmetricKeyResponse> {
@@ -37,7 +37,7 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
     @Override
     protected GetSymmetricKeyResponse validateResponse(GetSymmetricKeyResponse response) {
         if (response.getBody() == null) {
-            error("Received response but missing response body, can't proceed, please contact server admin.");
+            clientLogger.error("Received response but missing response body, can't proceed, please contact server admin.");
             return null;
         }
 
@@ -46,7 +46,7 @@ public class GetSymKeyOperation extends ClientOperation<GetSymmetricKeyRequest, 
         EncryptedKey encKey = responseBody.getEncKey();
 
         if (responseTicket == null || encKey == null) {
-            error("Missing encrypted key or ticket in response from server.");
+            clientLogger.error("Missing encrypted key or ticket in response from server.");
             return null;
         }
         return response;

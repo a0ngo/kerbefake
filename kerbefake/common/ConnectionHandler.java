@@ -8,23 +8,27 @@ import kerbefake.common.errors.InvalidMessageException;
 import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.common.Logger.error;
-
 public abstract class ConnectionHandler implements Runnable {
 
     private final Socket conn;
 
     private final Thread parentThread;
+    
+    private final Logger logger;
 
-    public ConnectionHandler(Socket conn, Thread parentThread) {
+    public ConnectionHandler(Socket conn, Thread parentThread, Logger logger) {
         if (conn == null || !conn.isConnected() || conn.isClosed()) {
             throw new RuntimeException("No socket provided or disconnected socket.");
         }
         if (parentThread == null || !parentThread.isAlive() || parentThread.isInterrupted()) {
             throw new RuntimeException("Parent thread is either dead or was interrupted.");
         }
+        if(logger == null){
+            throw new RuntimeException("No logger provided!");
+        }
         this.conn = conn;
         this.parentThread = parentThread;
+        this.logger = logger;
     }
 
     /**
@@ -40,10 +44,10 @@ public abstract class ConnectionHandler implements Runnable {
     public void run() {
         MessageStream messageStream;
         try {
-            messageStream = new MessageStream(conn, true, parentThread);
+            messageStream = new MessageStream(conn, true, parentThread, logger);
         } catch (IOException e) {
-            error("Failed to initialize streams: %s", e.getMessage());
-            error(e);
+            logger.error("Failed to initialize streams: %s", e.getMessage());
+            logger.error(e);
             return;
         }
 
@@ -56,12 +60,12 @@ public abstract class ConnectionHandler implements Runnable {
             try {
                 nextMessage = messageStream.readNextMessage();
             } catch (IOException | InvalidMessageException e) {
-                error(e instanceof IOException ? "Encountered IO Error when reading the next message: %s" : "Failed to read the next message provided due to: %s", e.getMessage());
-                error(e);
+                logger.error(e instanceof IOException ? "Encountered IO Error when reading the next message: %s" : "Failed to read the next message provided due to: %s", e.getMessage());
+                logger.error(e);
                 boolean sentResponse = messageStream.sendMessage(unknownFailure);
                 if (!sentResponse && e instanceof IOException) {
                     // Seems like there's some deeper issue with IO, we can't send the message back.
-                    error("Unable to receive and failed to send message, considering socket as broken, closing connection.");
+                    logger.error("Unable to receive and failed to send message, considering socket as broken, closing connection.");
                     break;
                 }
                 continue;
@@ -74,7 +78,7 @@ public abstract class ConnectionHandler implements Runnable {
                 continue;
             }
             if (!ServerRequest.class.isAssignableFrom(nextMessage.getClass())) {
-                error("Got a non server request message, can't handle.");
+                logger.error("Got a non server request message, can't handle.");
                 messageStream.sendMessage(unknownFailure);
                 continue;
             }
@@ -82,27 +86,27 @@ public abstract class ConnectionHandler implements Runnable {
             try {
                 nextMessage = processMessageBeforeExecution((ServerMessage & ServerRequest) nextMessage);
                 if (nextMessage == null) {
-                    error("Failure processing request before execution, can't proceed.");
+                    logger.error("Failure processing request before execution, can't proceed.");
                     messageStream.sendMessage(unknownFailure);
                     continue;
                 }
                 response = ((ServerRequest) nextMessage).execute();
             } catch (InvalidMessageException e) {
-                error(e);
-                error("Failed to execute server request due to: %s", e.getMessage());
+                logger.error(e);
+                logger.error("Failed to execute server request due to: %s", e.getMessage());
                 messageStream.sendMessage(unknownFailure);
                 continue;
             }
 
             if (!messageStream.sendMessage(response)) {
-                error("Failed to send message to user.");
+                logger.error("Failed to send message to user.");
             }
         }
 
         try {
             conn.close();
         } catch (IOException e) {
-            error("Failed to close socket due to: %s", e);
+            logger.error("Failed to close socket due to: %s", e);
             throw new RuntimeException(e);
         }
     }

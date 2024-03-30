@@ -16,9 +16,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
 import static kerbefake.common.CryptoUtils.performSha256;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
 
 public class RegisterClientRequest extends ServerMessage implements ServerRequest {
 
@@ -35,13 +34,13 @@ public class RegisterClientRequest extends ServerMessage implements ServerReques
         FailureResponse failedResponse = new FailureResponse(this.header.toResponseHeader(MessageCode.REGISTER_CLIENT_FAILED, 0));
 
 
-        info("Trying to execute register client request.");
+        authLogger.info("Trying to execute register client request.");
         byte[] passwordHash;
         try {
             passwordHash = performSha256(body.getPassword());
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            error("No SHA-256 digest on this machine, can't proceed.");
+            authLogger.error(e);
+            authLogger.error("No SHA-256 digest on this machine, can't proceed.");
             return failedResponse;
         }
         String id = UUID.randomUUID().toString().replace("-", "");
@@ -54,13 +53,13 @@ public class RegisterClientRequest extends ServerMessage implements ServerReques
                     Date.from(Instant.now())
             ));
         } catch (InvalidClientDataException e) {
-            e.printStackTrace();
-            error("Failed to create new client entry due to: %s", e);
+            authLogger.error(e);
+            authLogger.error("Failed to create new client entry due to: %s", e);
             return failedResponse;
         }
 
         if (!addedClient) {
-            error("Client addition failed.");
+            authLogger.error("Client addition failed.");
             return failedResponse;
         }
 

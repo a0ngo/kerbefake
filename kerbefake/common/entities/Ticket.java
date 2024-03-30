@@ -4,8 +4,7 @@ import kerbefake.common.CryptoUtils;
 import kerbefake.common.errors.InvalidMessageException;
 
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.common.Logger.*;
 import static kerbefake.common.Utils.*;
 
 public class Ticket extends EncryptedServerMessageBody {
@@ -81,7 +80,7 @@ public class Ticket extends EncryptedServerMessageBody {
 
             byte[] decryptedData = CryptoUtils.decrypt(key, this.ticketIv, this.encryptedData);
             if (decryptedData.length != DATA_DECRYPTED_SIZE) {
-                error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
+                commonLogger.error("Invalid decryption size, expected %d got %d", DATA_DECRYPTED_SIZE, decryptedData.length);
                 return false;
             }
 
@@ -102,12 +101,12 @@ public class Ticket extends EncryptedServerMessageBody {
             return false;
         }
         if (this.expTime == null || this.aesKey == null || this.expTime.length != 8 || this.aesKey.length != 32) {
-            error("Missing exp time or aes key for encryption.");
+            commonLogger.error("Missing exp time or aes key for encryption.");
             return false;
         }
 
         if (!assertNonZeroedByteArrayOfLengthN(this.expTime, 8)) {
-            error("Expiration time is zeroed out");
+            commonLogger.error("Expiration time is zeroed out");
             return false;
         }
         try {

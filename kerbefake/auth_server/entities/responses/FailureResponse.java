@@ -5,8 +5,8 @@ import kerbefake.common.entities.ServerMessage;
 import kerbefake.common.entities.ServerMessageHeader;
 import kerbefake.common.errors.InvalidMessageException;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
 import static kerbefake.common.Constants.SERVER_VERSION;
-import static kerbefake.common.Logger.error;
 
 public class FailureResponse extends ServerMessage {
 
@@ -24,7 +24,7 @@ public class FailureResponse extends ServerMessage {
             return header.toLEByteArray();
         } catch (InvalidMessageException e) {
             // This will never happen since response does not have a hex string in its content.
-            error(e);
+            authLogger.error(e);
             return null;
         }
     }

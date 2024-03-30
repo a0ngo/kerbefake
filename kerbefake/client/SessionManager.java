@@ -6,7 +6,7 @@ import kerbefake.common.entities.Ticket;
 import java.util.HashMap;
 import java.util.Map;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.client.Client.clientLogger;
 
 /**
  * A class that manages sessions that the client creates.
@@ -30,12 +30,12 @@ public final class SessionManager {
     public boolean createNewSession(String serverId, EncryptedKey encKey, Ticket ticket) {
         Session existingSession = serverIdToSessionMapping.get(serverId);
         if (existingSession != null) {
-            error("Session already exists with this server, please restart the client to clear it.");
+            clientLogger.error("Session already exists with this server, please restart the client to clear it.");
             return false;
         }
 
         if (encKey.isEncrypted()) {
-            error("Encrypted key was not decrypted before creating the session.");
+            clientLogger.error("Encrypted key was not decrypted before creating the session.");
             return false;
         }
 

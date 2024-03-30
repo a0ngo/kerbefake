@@ -2,25 +2,84 @@ package kerbefake.common;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A class with logging functionality, for neat logging.
  */
 public final class Logger {
 
-    public enum LoggerType {
-        AUTH_SERVER_LOGGER("auth_server.log"),
-        MESSAGE_SERVER_LOGGER("msg_server.log"),
-        CLIENT_LOGGER("client_server.log");
+    private static final Map<LoggerType, Logger> loggers = new HashMap<>();
 
+    public static Logger getLogger(LoggerType type) {
+        return getLogger(type, true, true, LogLevel.DEBUG, LogLevel.INFO);
+    }
+
+    public static Logger getLogger(LoggerType type, boolean logToFile, boolean logToConsole) {
+        return getLogger(type, logToFile, logToConsole, LogLevel.DEBUG, LogLevel.INFO);
+    }
+
+    public static Logger getLogger(LoggerType type, LogLevel minimalLevelToFile, LogLevel minimalLevelToConsole) {
+        return getLogger(type, true, true, minimalLevelToFile, minimalLevelToConsole);
+    }
+
+    public static Logger getLogger(LoggerType type, boolean logToFile, boolean logToConsole, LogLevel minimalLevelToFile, LogLevel minimalLevelToConsole) {
+        return loggers.computeIfAbsent(type, t -> {
+            try {
+                return new Logger(t, logToFile, logToConsole, minimalLevelToFile, minimalLevelToConsole);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private final LoggerType type;
+
+    private final boolean logToFile;
+
+    private final boolean logToConsole;
+
+    private final LogLevel minimalLevelToConsole;
+
+    private final LogLevel minimalLevelToFile;
+
+    private FileWriter logWriter = null;
+
+    public static final Logger commonLogger = getLogger(LoggerType.COMMON_LOGGER);
+
+    private Logger(LoggerType type, boolean logToFile, boolean logToConsole, LogLevel levelForFile, LogLevel levelForConsole) throws IOException {
+        this.type = type;
+        this.logToFile = logToFile;
+        this.logToConsole = logToConsole;
+        this.minimalLevelToFile = levelForFile;
+        this.minimalLevelToConsole = levelForConsole;
+        if (logToFile) {
+            logWriter = new FileWriter(type.getFileName());
+        }
+    }
+
+    public enum LoggerType {
+        AUTH_SERVER_LOGGER("[AUTH  ]", "auth_server.log"),
+        MESSAGE_SERVER_LOGGER("[MSG   ]", "msg_server.log"),
+        CLIENT_LOGGER("[CLIENT]", "client_server.log"),
+        TEST_LOGGER("[TEST  ]", "test.log"),
+        COMMON_LOGGER("[COMMON]", "common.log");
+
+        private final String logPrefix;
         private final String fileName;
 
-        LoggerType(String fileName) {
+        LoggerType(String logPrefix, String fileName) {
+            this.logPrefix = logPrefix;
             this.fileName = fileName;
         }
 
         public String getFileName() {
             return fileName;
+        }
+
+        public String getLogPrefix() {
+            return logPrefix;
         }
     }
 
@@ -41,40 +100,27 @@ public final class Logger {
 
     }
 
-    private static int MINIMAL_LOG_LEVEL_TO_LOG_TO_FILE;
-
-    private static FileWriter logWritter = null;
-
-    public static void initializeFileLogger(LoggerType logger, LogLevel minimalLevelToLogToFile) throws IOException {
-        if (logWritter != null) {
-            throw new RuntimeException("Tried to initialize logger for file but it was already initialized");
-        }
-
-        logWritter = new FileWriter(logger.fileName);
-        MINIMAL_LOG_LEVEL_TO_LOG_TO_FILE = minimalLevelToLogToFile.ordinal();
-    }
-
-    public static void print(String message, Object... args) {
+    public void print(String message, Object... args) {
         System.out.printf("%s%n", String.format(message, args));
     }
 
-    public static void info(String message, Object... args) {
+    public void info(String message, Object... args) {
         log(LogLevel.INFO, message, args);
     }
 
-    public static void infoToFileOnly(String message, Object... args) {
+    public void infoToFileOnly(String message, Object... args) {
         log(LogLevel.INFO, true, message, args);
     }
 
-    public static void error(String message, Object... args) {
+    public void error(String message, Object... args) {
         log(LogLevel.ERROR, message, args);
     }
 
-    public static void errorToFileOnly(String message, Object... args) {
+    public void errorToFileOnly(String message, Object... args) {
         log(LogLevel.ERROR, true, message, args);
     }
 
-    public static void error(Throwable e) {
+    public void error(Throwable e) {
         StringBuilder stackBuilder = new StringBuilder();
         for (StackTraceElement elem : e.getStackTrace()) {
             stackBuilder.append(elem.toString());
@@ -82,37 +128,41 @@ public final class Logger {
         log(LogLevel.ERROR, true, e.getMessage(), "\n", stackBuilder.toString());
     }
 
-    public static void warn(String message, Object... args) {
+    public void warn(String message, Object... args) {
         log(LogLevel.WARN, message, args);
     }
 
-    public static void warnToFileOnly(String message, Object... args) {
+    public void warnToFileOnly(String message, Object... args) {
         log(LogLevel.WARN, true, message, args);
     }
 
-    public static void debug(String message, Object... args) {
+    public void debug(String message, Object... args) {
         log(LogLevel.DEBUG, message, args);
     }
 
-    public static void debugToFileOnly(String message, Object... args) {
+    public void debugToFileOnly(String message, Object... args) {
         log(LogLevel.DEBUG, true, message, args);
     }
 
 
-    private static void log(LogLevel logLevel, String message, Object... args) {
+    private void log(LogLevel logLevel, String message, Object... args) {
         log(logLevel, false, message, args);
     }
 
-    private static void log(LogLevel logLevel, boolean fileOnly, String message, Object... args) {
-        String fullMessage = String.format("%7s %s%n", logLevel.getLevel(), String.format(message, args));
-        if (!fileOnly)
-            System.out.printf(fullMessage);
-        if (logWritter != null && logLevel.ordinal() >= MINIMAL_LOG_LEVEL_TO_LOG_TO_FILE) {
-            try {
-                logWritter.write(fullMessage);
-            } catch (IOException e) {
-                logWritter = null;
-                error("Failed to write to log file, stopping any further attempts to write to file, failed due to: %s", e.getMessage());
+    private void log(LogLevel logLevel, boolean fileOnly, String message, Object... args) {
+        String fullMessage = String.format("%7s%7s:%s%n", type.logPrefix, logLevel.getLevel(), String.format(message, args));
+        if (logToConsole)
+            if (logLevel.ordinal() >= minimalLevelToConsole.ordinal())
+                System.out.printf(fullMessage);
+        if (logToFile) {
+            if (fileOnly || logLevel.ordinal() >= minimalLevelToFile.ordinal()) {
+                try {
+                    logWriter.write(fullMessage);
+                    logWriter.flush();
+                } catch (IOException e) {
+                    logWriter = null;
+                    error("Failed to write to log file, stopping any further attempts to write to file, failed due to: %s", e.getMessage());
+                }
             }
         }
     }

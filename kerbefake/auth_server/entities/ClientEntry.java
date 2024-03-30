@@ -7,8 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
+import static kerbefake.auth_server.AuthServer.authLogger;
 import static kerbefake.common.Constants.ID_HEX_LENGTH_CHARS;
-import static kerbefake.common.Logger.error;
 
 /**
  * Defines a
@@ -61,7 +61,7 @@ public class ClientEntry {
     public static ClientEntry parseClient(String clientData) throws InvalidClientDataException {
         String[] clientLineParts = clientData.split(":");
         if (clientLineParts.length != 4) {
-            error("Invalid data line, invalid number of colons, has %d expected 3, assuming corrupted file and returning empty values ", clientLineParts.length - 1);
+            authLogger.error("Invalid data line, invalid number of colons, has %d expected 3, assuming corrupted file and returning empty values ", clientLineParts.length - 1);
             throw new InvalidClientDataException("Entry");
         }
 

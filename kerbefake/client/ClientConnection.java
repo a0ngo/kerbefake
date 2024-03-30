@@ -7,8 +7,7 @@ import kerbefake.common.errors.InvalidMessageException;
 import java.io.IOException;
 import java.net.Socket;
 
-import static kerbefake.common.Logger.error;
-import static kerbefake.common.Logger.info;
+import static kerbefake.client.Client.clientLogger;
 
 /**
  * A class that represents a single connection that the client has/
@@ -34,11 +33,11 @@ public class ClientConnection {
     public boolean open() {
         try {
             socket = new Socket(serverAddress, serverPort);
-            messageStream = new MessageStream(socket, false, Thread.currentThread());
+            messageStream = new MessageStream(socket, false, Thread.currentThread(), clientLogger);
             return true;
         } catch (IOException e) {
-            error(e);
-            error("Failed to connect to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
+            clientLogger.error(e);
+            clientLogger.error("Failed to connect to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
             return false;
         }
     }
@@ -62,9 +61,9 @@ public class ClientConnection {
     }
 
     public ServerMessage send(ServerMessage message) throws InvalidMessageException, IOException, InterruptedException {
-        info("Sending message to server.");
+        clientLogger.info("Sending message to server.");
         messageStream.sendMessage(message);
-        info("Waiting for server response.");
+        clientLogger.info("Waiting for server response.");
         return messageStream.readNextMessage();
     }
 
@@ -72,10 +71,10 @@ public class ClientConnection {
         try {
             messageStream.close();
             socket.close();
-            info("Connection to server %s:%d closed.", serverAddress, serverPort);
+            clientLogger.info("Connection to server %s:%d closed.", serverAddress, serverPort);
         } catch (IOException e) {
-            error(e);
-            error("Failed closing connection to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
+            clientLogger.error(e);
+            clientLogger.error("Failed closing connection to server %s:%d due to: %s", serverAddress, serverPort, e.getMessage());
         }
     }
 }

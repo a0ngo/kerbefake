@@ -10,14 +10,14 @@ import kerbefake.msg_server.entities.SubmitTicketRequest;
 
 import java.net.Socket;
 
-import static kerbefake.common.Logger.error;
+import static kerbefake.msg_server.MessageServer.msgLogger;
 
 public class MessageServerConnectionHandler extends ConnectionHandler {
 
     private final byte[] symKey;
 
     public MessageServerConnectionHandler(Socket conn, Thread parentThread, byte[] symKey) {
-        super(conn, parentThread);
+        super(conn, parentThread, msgLogger);
         this.symKey = symKey;
     }
 
@@ -27,7 +27,7 @@ public class MessageServerConnectionHandler extends ConnectionHandler {
         if (!(message instanceof SubmitTicketRequest)) {
             Ticket sessionTicket = KnownSessions.getInstance().getSession(message.getHeader().getClientID());
             if (sessionTicket == null) {
-                error("Unknown client - no ticket found in memory for %s", message.getHeader().getClientID());
+                msgLogger.error("Unknown client - no ticket found in memory for %s", message.getHeader().getClientID());
                 return null;
             }
 
@@ -36,8 +36,8 @@ public class MessageServerConnectionHandler extends ConnectionHandler {
         try {
             ((EncryptedServerMessage) message).decrypt(key);
         } catch (InvalidMessageException e) {
-            error("Failed to decrypt server message due to: %s", e.getMessage());
-            error(e);
+            msgLogger.error("Failed to decrypt server message due to: %s", e.getMessage());
+            msgLogger.error(e);
             return null;
         }
         return message;

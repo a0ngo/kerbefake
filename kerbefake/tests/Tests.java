@@ -9,6 +9,7 @@ import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyRespo
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponse;
 import kerbefake.auth_server.entities.responses.register_client.RegisterClientResponseBody;
+import kerbefake.common.Logger;
 import kerbefake.common.MessageStream;
 import kerbefake.common.entities.Authenticator;
 import kerbefake.common.entities.EncryptedKey;
@@ -26,7 +27,8 @@ import java.security.NoSuchAlgorithmException;
 
 import static kerbefake.common.Constants.NONCE_SIZE;
 import static kerbefake.common.CryptoUtils.*;
-import static kerbefake.common.Logger.*;
+import static kerbefake.common.Logger.LoggerType;
+import static kerbefake.common.Logger.getLogger;
 import static kerbefake.common.Utils.bytesToHexString;
 import static kerbefake.common.Utils.hexStringToByteArray;
 import static kerbefake.tests.TestUtils.startAuthServer;
@@ -44,25 +46,27 @@ final class Tests {
     public static final String EXPECTED_TEST_FAILURE_STRING = "TEST - ❌ Failed";
 
     public static String CLIENT_ID = null;
+    
+    public static final Logger testLogger = getLogger(LoggerType.TEST_LOGGER, Logger.LogLevel.DEBUG, Logger.LogLevel.DEBUG);
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
         int successfulTests = 0, totalTests = 3;
         try {
-            info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
+            testLogger.info("TEST - ================ \uD83E\uDDEA Testing full correct flow \uD83E\uDDEA ===================");
             testFullCorrectFlow();
-            info("TEST - ================ ✅✅✅ Testing full correct flow ✅✅✅ ===================");
+            testLogger.info("TEST - ================ ✅✅✅ Testing full correct flow ✅✅✅ ===================");
             successfulTests++;
-            info("TEST - Waiting 3 seconds to make sure all threads are dead.");
+            testLogger.info("TEST - Waiting 3 seconds to make sure all threads are dead.");
             Thread.sleep(3 * 1000);
-            info("TEST - ================ \uD83E\uDDEA Testing expected failure duplicate registration \uD83E\uDDEA ===================");
+            testLogger.info("TEST - ================ \uD83E\uDDEA Testing expected failure duplicate registration \uD83E\uDDEA ===================");
             testDuplicateRegister();
             successfulTests++;
-            info("TEST - ================ ✅✅✅ Testing expected failure duplicate registration ✅✅✅ ===================");
+            testLogger.info("TEST - ================ ✅✅✅ Testing expected failure duplicate registration ✅✅✅ ===================");
             Thread.sleep(3 * 1000);
-            info("TEST - ================ \uD83E\uDDEA Testing expected failure due to ticket being expired \uD83E\uDDEA ===================");
+            testLogger.info("TEST - ================ \uD83E\uDDEA Testing expected failure due to ticket being expired \uD83E\uDDEA ===================");
             testExpiredTicket();
             successfulTests++;
-            info("TEST - ================ ✅✅✅ Testing expected failure due to ticket being expired ✅✅✅ ===================");
+            testLogger.info("TEST - ================ ✅✅✅ Testing expected failure due to ticket being expired ✅✅✅ ===================");
 
         } catch (RuntimeException | InvalidMessageException e) {
             // Do nothing, just continue
@@ -70,9 +74,9 @@ final class Tests {
             e.printStackTrace();
         }
         if (successfulTests == totalTests) {
-            info("TEST - ✅✅✅ Finished ALL tests successfully (%d/%d)", successfulTests, totalTests);
+            testLogger.info("TEST - ✅✅✅ Finished ALL tests successfully (%d/%d)", successfulTests, totalTests);
         } else {
-            error("TEST - ❌❌❌ Some tests failed (%d/%d successful)", successfulTests, totalTests);
+            testLogger.error("TEST - ❌❌❌ Some tests failed (%d/%d successful)", successfulTests, totalTests);
         }
     }
 
@@ -84,7 +88,7 @@ final class Tests {
             if (CLIENT_ID == null) {
                 clientId = registerClient(result.authServerStream);
             } else {
-                info("TEST - No need to register, client ID is provided.");
+                testLogger.info("TEST - No need to register, client ID is provided.");
                 clientId = CLIENT_ID;
             }
 
@@ -104,17 +108,17 @@ final class Tests {
             EncryptedKey encryptedKey = getSessionKey(getSymKey, clientId);
             Ticket ticket = ((GetSymmetricKeyResponseBody) getSymKey.getBody()).getTicket();
 
-            info("Test - sleeping for 5 seconds");
+            testLogger.info("Test - sleeping for 5 seconds");
             Thread.sleep(5 * 1000);
             try {
                 submitTicketToMsgServer(result.msgServerStream, ticket, clientId, encryptedKey);
             } catch (RuntimeException e) {
                 if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
-                    info("TEST - ✅ Test failed as expected");
+                    testLogger.info("TEST - ✅ Test failed as expected");
                     return;
                 }
             }
-            info("TEST - ❌ Failed to raise error when submitting expired ticket to message server");
+            testLogger.info("TEST - ❌ Failed to raise error when submitting expired ticket to message server");
         } finally {
             if (!result.authServerSocket.isClosed())
                 endTest(result.authServerSocket);
@@ -130,15 +134,15 @@ final class Tests {
      * @throws IOException
      */
     private static void testDuplicateRegister() throws IOException, InterruptedException, InvalidMessageException {
-        info("TEST - =========== Expected failure from dup register ===========");
-        info("TEST - Trying to register client with auth server.");
+        testLogger.info("TEST - =========== Expected failure from dup register ===========");
+        testLogger.info("TEST - Trying to register client with auth server.");
 
         TestThreadSocketsAndStreams socketsAndStreams = getSocketsAndStreams();
         try {
             registerClient(socketsAndStreams.authServerStream);
         } catch (RuntimeException e) {
             if (e.getMessage().equals(EXPECTED_TEST_FAILURE_STRING)) {
-                info("TEST - ✅ Test failed as expected");
+                testLogger.info("TEST - ✅ Test failed as expected");
                 return;
             }
         } finally {
@@ -146,7 +150,7 @@ final class Tests {
                 endTest(socketsAndStreams.authServerSocket);
             endTest(socketsAndStreams.msgServerSocket, socketsAndStreams.authServerThreadHandle, socketsAndStreams.msgServerThreadHandle);
         }
-        info("TEST - ❌ Failed to raise error when performing duplicate register with auth server");
+        testLogger.info("TEST - ❌ Failed to raise error when performing duplicate register with auth server");
 
     }
 
@@ -164,7 +168,7 @@ final class Tests {
             if (CLIENT_ID == null) {
                 clientId = registerClient(result.authServerStream);
             } else {
-                info("TEST - No need to register, client ID is provided.");
+                testLogger.info("TEST - No need to register, client ID is provided.");
                 clientId = CLIENT_ID;
             }
             CLIENT_ID = clientId;
@@ -203,8 +207,8 @@ final class Tests {
      * @throws IOException - in case of an IO error when communicating with the server
      */
     private static String registerClient(MessageStream stream) throws IOException, InvalidMessageException {
-        info("TEST - =========== Submit Ticket to Message Server (1024) ===========");
-        info("TEST - Trying to register client with auth server.");
+        testLogger.info("TEST - =========== Submit Ticket to Message Server (1024) ===========");
+        testLogger.info("TEST - Trying to register client with auth server.");
 
         String randomId = bytesToHexString(new byte[16]);
         String name = "Ron Person\0";
@@ -215,7 +219,7 @@ final class Tests {
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to register client with auth server");
         }
-        info("TEST - ✅ Successfully registered client with auth server");
+        testLogger.info("TEST - ✅ Successfully registered client with auth server");
 
         RegisterClientResponseBody responseBody = (RegisterClientResponseBody) response.getBody();
         return responseBody.getId();
@@ -223,15 +227,15 @@ final class Tests {
     }
 
     private static GetSymmetricKeyResponse getSymKey(MessageStream stream, String clientId) throws IOException, InvalidMessageException {
-        info("TEST - =========== Submit Ticket to Message Server (1027) ===========");
-        info("TEST - Trying to get symmetric key from auth server.");
+        testLogger.info("TEST - =========== Submit Ticket to Message Server (1027) ===========");
+        testLogger.info("TEST - Trying to get symmetric key from auth server.");
         byte[] nonce = getSecureRandomBytes(NONCE_SIZE);
         GetSymmetricKeyRequest request = CreateSymmetricKeyRequestFactory.getInstance().setNonce(nonce).setServerId(SERVER_ID).setClientId(CLIENT_ID).build();
         GetSymmetricKeyResponse response = (GetSymmetricKeyResponse) sendRequestAndGetResponse(stream, request);
         if (response == null) {
             throw new RuntimeException("TEST - ❌ Failed to get symmetric key and ticket from auth server");
         }
-        info("TEST - ✅ Successfully got symmetric key and ticket from auth server");
+        testLogger.info("TEST - ✅ Successfully got symmetric key and ticket from auth server");
 
         return response;
     }
@@ -262,8 +266,8 @@ final class Tests {
      * @param key      - the key which holds our session key
      */
     private static void submitTicketToMsgServer(MessageStream stream, Ticket ticket, String clientId, EncryptedKey key) throws IOException, InvalidMessageException, NoSuchAlgorithmException {
-        info("TEST - =========== Submit Ticket to Message Server (1028) ===========");
-        info("TEST - Submitting a ticket to the message server.");
+        testLogger.info("TEST - =========== Submit Ticket to Message Server (1028) ===========");
+        testLogger.info("TEST - Submitting a ticket to the message server.");
 
         byte[] iv = getIv();
         byte[] clientIdBytes = hexStringToByteArray(clientId);
@@ -280,11 +284,11 @@ final class Tests {
         );
         SubmitTicketRequest request = SubmitTicketRequestFactory.getInstance().setTicket(ticket).setAuthenticator(authenticator).encrypt(key.getAesKey()).setClientId(CLIENT_ID).build();
 
-        debug("TEST - Submit ticket data: " + bytesToHexString(request.toLEByteArray()));
+        testLogger.debug("TEST - Submit ticket data: " + bytesToHexString(request.toLEByteArray()));
         if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to submit ticket to message server");
         }
-        info("TEST - ✅ Successfully submitted a ticket");
+        testLogger.info("TEST - ✅ Successfully submitted a ticket");
     }
 
     /**
@@ -295,15 +299,15 @@ final class Tests {
      * @throws IOException in case of a failure to send the request or get the response
      */
     private static void sendMessageToMsgServer(MessageStream stream, EncryptedKey key, String clientId) throws IOException, InvalidMessageException {
-        info("TEST - =========== Send Message to Message Server ===========");
-        info("TEST - Sending a message to the message server.");
+        testLogger.info("TEST - =========== Send Message to Message Server ===========");
+        testLogger.info("TEST - Sending a message to the message server.");
         String message = "Hello this is some random message very long test 1231 123 123 40n3 to wef";
 
         SendMessageRequest request = SendMessageRequestFactory.getInstance().setMessage(message).encrypt(key.getAesKey()).setClientId(CLIENT_ID).build();
         if (sendRequestAndGetResponse(stream, request) == null) {
             throw new RuntimeException("TEST - ❌ Failed to send message or get response");
         }
-        info("TEST - ✅ Successfully sent a message");
+        testLogger.info("TEST - ✅ Successfully sent a message");
 
     }
 
@@ -340,8 +344,8 @@ final class Tests {
             }
             return response;
         } catch (InvalidMessageException | InterruptedException e) {
-            error(e);
-            error("TEST - ❌ Failed to parse response due to: %s", e);
+            testLogger.error(e);
+            testLogger.error("TEST - ❌ Failed to parse response due to: %s", e);
         }
         return null;
     }
@@ -359,8 +363,8 @@ final class Tests {
         Socket authServerSocket = new Socket("127.0.0.1", 1256);
         Socket msgServerSocket = new Socket("127.0.0.1", 1235);
 
-        MessageStream authServerStream = new MessageStream(authServerSocket, false, authServerThreadHandle);
-        MessageStream msgServerStream = new MessageStream(msgServerSocket, false, msgServerThreadHandle);
+        MessageStream authServerStream = new MessageStream(authServerSocket, false, authServerThreadHandle, testLogger);
+        MessageStream msgServerStream = new MessageStream(msgServerSocket, false, msgServerThreadHandle, testLogger);
 
         return new TestThreadSocketsAndStreams(authServerThreadHandle, msgServerThreadHandle, authServerSocket, authServerStream, msgServerSocket, msgServerStream);
     }
