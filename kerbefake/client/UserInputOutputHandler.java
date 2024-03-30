@@ -39,7 +39,7 @@ public final class UserInputOutputHandler {
      */
     public static String promptString(String message, boolean notEmpty) {
         String response = (String) prompt(message, String.class);
-        while (!notEmpty && (response == null || response.isEmpty())) {
+        while (notEmpty && (response == null || response.isEmpty())) {
             error("Please provide a non-empty string.");
             response = inputHandler.next();
         }
@@ -111,7 +111,10 @@ public final class UserInputOutputHandler {
     public static char[] getPasswordFromUser() {
         info("Please provide your password;");
         System.out.print("> ");
-        return System.console().readPassword();
+        if (System.console() == null) {
+            warn("Note that we can't obscure the password!");
+        }
+        return System.console() == null ? inputHandler.next().toCharArray() : System.console().readPassword();
     }
 
     public static String getNameFromUser() {
@@ -130,8 +133,8 @@ public final class UserInputOutputHandler {
         // This do-while loop is meant to properly parse a provided IP:Port address provided by the user, if none is provided the above
         // is kept as default.
         do {
-            String serverString = promptString(String.format("Please provide the %s server address (leave empty for %s)", serverType, defaultAddress), false);
-            if (serverString != null && !serverString.isEmpty()) {
+            String serverString = promptString(String.format("Please provide the %s server address (enter 0 for %s)", serverType, defaultAddress), false);
+            if (serverString != null && !serverString.equals("0")) {
                 if (serverString.matches(IP_REGEX)) {
                     int port = promptInt("Server provided without port, please provide the port used.", 1, 65535);
                     return String.format("%s:%d", serverString, port);
