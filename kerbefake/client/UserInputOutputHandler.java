@@ -114,10 +114,7 @@ public final class UserInputOutputHandler {
      * in which case we need it for the registration operation.
      */
     public static char[] getPasswordFromUser() {
-        clientLogger.info("Please provide your password;");
-        if (System.console() == null) {
-            clientLogger.warn("Note that we can't obscure the password!");
-        }
+        clientLogger.info("Please provide your password (%s);", System.console() == null ? "Note that we can't obscure the password" : "It will not appear on screen");
         System.out.print("> ");
         return System.console() == null ? inputHandler.next().toCharArray() : System.console().readPassword();
     }
