@@ -40,9 +40,9 @@ public final class Logger {
 
     private final boolean logToConsole;
 
-    private final LogLevel minimalLevelToConsole;
+    private LogLevel minimalLevelToConsole;
 
-    private final LogLevel minimalLevelToFile;
+    private LogLevel minimalLevelToFile;
 
     private FileWriter logWriter = null;
 
@@ -55,8 +55,13 @@ public final class Logger {
         this.minimalLevelToFile = levelForFile;
         this.minimalLevelToConsole = levelForConsole;
         if (logToFile) {
-             logWriter = new FileWriter(type.getFileName(), true);
+            logWriter = new FileWriter(type.getFileName(), true);
         }
+    }
+
+    public void updateMinimalLogLevel(LogLevel levelForFile, LogLevel levelForConsole) {
+        this.minimalLevelToFile = levelForFile;
+        this.minimalLevelToConsole = levelForConsole;
     }
 
     public enum LoggerType {
