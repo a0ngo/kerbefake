@@ -15,6 +15,7 @@ import java.net.Socket;
 
 import static kerbefake.common.Constants.RESPONSE_HEADER_SIZE;
 import static kerbefake.common.Utils.byteArrayToLEByteBuffer;
+import static kerbefake.common.Utils.bytesToHexString;
 
 /**
  * This class is meant to wrap around the {@link java.io.InputStream} and {@link java.io.OutputStream} and provide
@@ -35,7 +36,7 @@ public final class MessageStream {
     /**
      * Which messages this server accepts.
      */
-    private MessageCode[] acceptedMessages;
+    private final MessageCode[] acceptedMessages;
 
     public MessageStream(Socket connectionSocket, boolean isServer, Thread parentThread, Logger logger) throws IOException {
         this(connectionSocket, isServer, parentThread, logger, null);
@@ -92,8 +93,8 @@ public final class MessageStream {
         }
 
         if (readBytes != HEADER_SIZE) {
-            logger.error("Failed to read header, expected 23 bytes but got %d", readBytes);
-            throw new InvalidMessageException(String.format("Failed to read header, expected 23 bytes but got %d", readBytes));
+            logger.error("Failed to read header, expected %d bytes but got %d", HEADER_SIZE, readBytes);
+            throw new InvalidMessageException(String.format("Failed to read header, expected %d bytes but got %d", HEADER_SIZE, readBytes));
         }
 
         try {
@@ -111,8 +112,8 @@ public final class MessageStream {
 
         if (!acceptMessage) {
             // Read all remaining data to clear the socket before exiting.
-            if(messageHeader.getPayloadSize() > 0) {
-                byte[] garbage = new byte[ messageHeader.getPayloadSize()];
+            if (messageHeader.getPayloadSize() > 0) {
+                byte[] garbage = new byte[messageHeader.getPayloadSize()];
                 int ignored = inputStream.read(garbage);
             }
             logger.info("Received a message that should not accept: %s", messageHeader.getMessageCode().getMessageClass().getCanonicalName());
@@ -140,15 +141,17 @@ public final class MessageStream {
          * We expect there to be a constructor of signature (ServerMessageHeader) or
          * (ServerMessageHeader header, ServerMessageBody body).
          */
+        ServerMessage receivedMessage;
         try {
             if (bodyClass != null && payloadSize > 0) {
                 messageBody = bodyClass.getConstructor().newInstance().parse(byteArrayToLEByteBuffer(bodyBytes).array());
-                return messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass()).newInstance(messageHeader, messageCode.getBodyClass().cast(messageBody));
+                receivedMessage = messageClass.getConstructor(ServerMessageHeader.class, messageCode.getBodyClass()).newInstance(messageHeader, messageCode.getBodyClass().cast(messageBody));
             } else if (bodyClass != null) {
                 logger.error("Provided body type however no payload provided as part of the message.");
                 return null;
+            } else {
+                receivedMessage = messageClass.getConstructor(ServerMessageHeader.class).newInstance(messageHeader);
             }
-            return messageClass.getConstructor(ServerMessageHeader.class).newInstance(messageHeader);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             logger.errorToFileOnly("Failed to create new message class (please make sure the body has an empty constructor and the parse function!) due to: %s", e);
             logger.error(e);
@@ -163,6 +166,9 @@ public final class MessageStream {
             logger.error(e);
             return null;
         }
+
+        logger.debug("Received following message (%s):\n%s", receivedMessage.getClass().getCanonicalName(), bytesToHexString(receivedMessage.toLEByteArray()));
+        return receivedMessage;
     }
 
     /**
