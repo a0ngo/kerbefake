@@ -24,26 +24,32 @@ public final class SubmitTicketRequestFactory extends MessageFactory<SubmitTicke
     }
 
     public SubmitTicketRequestFactory setAuthenticator(Authenticator authenticator) {
-        if (this.authenticator != null)
+        if (authenticator == null) {
+            this.authenticator = null;
+            return this;
+        }
+        if (this.authenticator != null && payloadSize != 0)
             if (this.authenticator.isEncrypted())
                 payloadSize -= this.authenticator.toLEByteArray().length;
 
         this.authenticator = authenticator;
-        if (this.authenticator != null)
-            if (this.authenticator.isEncrypted())
-                payloadSize += this.authenticator.toLEByteArray().length;
+        if (this.authenticator.isEncrypted())
+            payloadSize += this.authenticator.toLEByteArray().length;
         return this;
     }
 
     public SubmitTicketRequestFactory setTicket(Ticket ticket) throws InvalidMessageException {
-        if (this.ticket != null)
+        if (ticket == null) {
+            this.ticket = null;
+            return this;
+        }
+        if (this.ticket != null && payloadSize != 0)
             if (this.ticket.isEncrypted())
                 payloadSize -= this.ticket.toLEByteArray().length;
 
         this.ticket = ticket;
-        if (this.ticket != null)
-            if (this.ticket.isEncrypted())
-                payloadSize += this.ticket.toLEByteArray().length;
+        if (this.ticket.isEncrypted())
+            payloadSize += this.ticket.toLEByteArray().length;
         return this;
     }
 
@@ -69,14 +75,18 @@ public final class SubmitTicketRequestFactory extends MessageFactory<SubmitTicke
 
     @Override
     protected SubmitTicketRequest internalBuild() throws InvalidMessageException {
-        if (this.authenticator == null)
-            throw new InvalidMessageException("Missing authenticator for request.");
-        if (this.ticket == null)
-            throw new InvalidMessageException("Missing ticket for request.");
-        if (!encrypted)
-            throw new InvalidMessageException("Must encrypt before building.");
+        try {
+            if (this.authenticator == null)
+                throw new InvalidMessageException("Missing authenticator for request.");
+            if (this.ticket == null)
+                throw new InvalidMessageException("Missing ticket for request.");
+            if (!encrypted)
+                throw new InvalidMessageException("Must encrypt before building.");
 
-        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.SUBMIT_TICKET, payloadSize);
-        return new SubmitTicketRequest(header, new SubmitTicketRequestBody(authenticator, ticket));
+            ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.SUBMIT_TICKET, payloadSize);
+            return new SubmitTicketRequest(header, new SubmitTicketRequestBody(authenticator, ticket));
+        } finally {
+            setAuthenticator(null).setTicket(null).setClientId(null);
+        }
     }
 }

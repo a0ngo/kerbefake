@@ -18,29 +18,33 @@ public class CreateSymmetricKeyRequestFactory extends MessageFactory<GetSymmetri
 
     public CreateSymmetricKeyRequestFactory setServerId(String serverId) {
         // ID is sent as bytes which is half of the length of the string.
-        if (this.serverId != null) payloadSize -= this.serverId.length() / 2;
+        if (this.serverId != null && payloadSize != 0) payloadSize -= this.serverId.length() / 2;
         this.serverId = serverId;
-        payloadSize += serverId.length() / 2;
+        if (serverId != null) payloadSize += serverId.length() / 2;
         return this;
     }
 
     public CreateSymmetricKeyRequestFactory setNonce(byte[] nonce) {
-        if (this.nonce != null) payloadSize -= this.nonce.length;
+        if (this.nonce != null && payloadSize != 0) payloadSize -= this.nonce.length;
         this.nonce = nonce;
-        payloadSize += nonce.length;
+        if (nonce != null) payloadSize += nonce.length;
         return this;
     }
 
     @Override
     protected GetSymmetricKeyRequest internalBuild() throws InvalidMessageException {
-        if (serverId == null || serverId.isEmpty()) {
-            throw new InvalidMessageException("Missing server ID from request.");
+        try {
+            if (serverId == null || serverId.isEmpty()) {
+                throw new InvalidMessageException("Missing server ID from request.");
+            }
+            if (!assertNonZeroedByteArrayOfLengthN(nonce, NONCE_SIZE)) {
+                throw new InvalidMessageException("Missing nonce from request or is all 0.");
+            }
+            ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, payloadSize);
+            return new GetSymmetricKeyRequest(header, new GetSymmetricKeyRequestBody(serverId, nonce));
+        } finally {
+            setNonce(null).setServerId(null).setClientId(null);
         }
-        if (!assertNonZeroedByteArrayOfLengthN(nonce, NONCE_SIZE)) {
-            throw new InvalidMessageException("Missing nonce from request or is all 0.");
-        }
-        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REQUEST_SYMMETRIC_KEY, payloadSize);
-        return new GetSymmetricKeyRequest(header, new GetSymmetricKeyRequestBody(serverId, nonce));
     }
 
     private CreateSymmetricKeyRequestFactory() {

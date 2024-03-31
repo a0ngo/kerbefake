@@ -19,18 +19,26 @@ public final class RegisterClientRequestFactory extends MessageFactory<RegisterC
     private char[] password;
 
     public RegisterClientRequestFactory setName(String name) {
+        if (name == null) {
+            this.name = null;
+            return this;
+        }
         String nameToStore = name;
         if (name.charAt(name.length() - 1) != (char) 0) {
             nameToStore = name + "\0";
         }
 
-        if (this.name != null) payloadSize -= this.name.length();
+        if (this.name != null && payloadSize != 0) payloadSize -= this.name.length();
         this.name = nameToStore;
         payloadSize += nameToStore.length();
         return this;
     }
 
     public RegisterClientRequestFactory setPassword(char[] password) {
+        if (password == null) {
+            this.password = null;
+            return this;
+        }
         char[] passwordToStore = password;
         if (password[password.length - 1] != (char) 0) {
             passwordToStore = new char[password.length + 1];
@@ -38,7 +46,7 @@ public final class RegisterClientRequestFactory extends MessageFactory<RegisterC
             passwordToStore[password.length] = (char) 0;
         }
 
-        if (this.password != null) payloadSize -= this.password.length;
+        if (this.password != null && payloadSize != 0) payloadSize -= this.password.length;
         this.password = passwordToStore;
         payloadSize += passwordToStore.length;
         return this;
@@ -46,15 +54,19 @@ public final class RegisterClientRequestFactory extends MessageFactory<RegisterC
 
     @Override
     protected RegisterClientRequest internalBuild() throws InvalidMessageException {
-        if (name == null || name.isEmpty()) {
-            throw new InvalidMessageException("Missing name argument for request.");
-        }
-        if (password == null || password.length == 0) {
-            throw new InvalidMessageException("Missing password argument for request.");
-        }
+        try {
+            if (name == null || name.isEmpty()) {
+                throw new InvalidMessageException("Missing name argument for request.");
+            }
+            if (password == null || password.length == 0) {
+                throw new InvalidMessageException("Missing password argument for request.");
+            }
 
-        ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REGISTER_CLIENT, payloadSize);
-        return new RegisterClientRequest(header, new RegisterClientRequestBody(name, password));
+            ServerMessageHeader header = new ServerMessageHeader(clientId, SERVER_VERSION, MessageCode.REGISTER_CLIENT, payloadSize);
+            return new RegisterClientRequest(header, new RegisterClientRequestBody(name, password));
+        } finally {
+            setName(null).setPassword(null).setClientId(null);
+        }
     }
 
     // For a register client request we don't care about the client id so we set it to be all zeros and we override
