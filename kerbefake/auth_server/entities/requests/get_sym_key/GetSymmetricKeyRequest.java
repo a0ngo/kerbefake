@@ -53,7 +53,7 @@ public class GetSymmetricKeyRequest extends ServerMessage implements ServerReque
 
         long time = System.currentTimeMillis();
         long expTime = time + 10 * 60 * 1000; // 10 minutes
-        authLogger.info("Exp time: %d", expTime);
+         authLogger.debug("Exp time: %d", expTime);
 
         byte[] creationTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(time).array();
         byte[] expTimeArr = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(expTime).array();
