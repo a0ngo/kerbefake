@@ -35,6 +35,12 @@ public class Client implements Runnable {
     public static final Logger clientLogger = Logger.getLogger(LoggerType.CLIENT_LOGGER);
 
     public Client() {
+        this(false);
+    }
+
+    public Client(boolean fullDebug) {
+        if (fullDebug)
+            clientLogger.updateMinimalLogLevel(Logger.LogLevel.DEBUG, Logger.LogLevel.DEBUG);
         try {
             clientConfig = ClientConfig.load();
             clientState = BEFORE_REGISTER;
@@ -54,10 +60,10 @@ public class Client implements Runnable {
         sessionManager = SessionManager.getInstance();
     }
 
-    public void openAuthConnection(String ip,int port)
-    {
-        networkManager.openConnection(ServerType.AUTH,ip,port, defaultTimeTillClose);
+    public void openAuthConnection(String ip, int port) {
+        networkManager.openConnection(ServerType.AUTH, ip, port, defaultTimeTillClose);
     }
+
     private int getOperationToPerform() {
         String message;
         switch (clientState) {
@@ -105,7 +111,7 @@ public class Client implements Runnable {
             return false;
         }
         String name = getNameFromUser();
-        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword(),this.clientConfig.getClientIdHex()).perform();
+        String clientId = new RegisterOperation(authServerConn, name, this.clientConfig.getPlainTextPassword(), this.clientConfig.getClientIdHex()).perform();
         if (clientId == null || clientId.length() != ID_HEX_LENGTH_CHARS) {
             clientLogger.error("Register operation failed.");
             return false;

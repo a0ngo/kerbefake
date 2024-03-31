@@ -30,6 +30,12 @@ public class MessageServer {
     public static Logger msgLogger = Logger.getLogger(Logger.LoggerType.MESSAGE_SERVER_LOGGER);
 
     public MessageServer() throws IOException {
+        this(false);
+    }
+
+    public MessageServer(boolean fullDebug) throws IOException {
+        if (fullDebug)
+            msgLogger.updateMinimalLogLevel(Logger.LogLevel.DEBUG, Logger.LogLevel.DEBUG);
         BufferedReader reader = new BufferedReader(new FileReader("msg.info"));
         String addr = reader.readLine();
         String name = reader.readLine();

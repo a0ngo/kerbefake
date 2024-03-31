@@ -23,6 +23,15 @@ public class AuthServer {
 
     public static final Logger authLogger = Logger.getLogger(Logger.LoggerType.AUTH_SERVER_LOGGER);
 
+    public AuthServer() {
+        this(false);
+    }
+
+    public AuthServer(boolean fullDebug) {
+        authLogger.updateMinimalLogLevel(Logger.LogLevel.DEBUG,Logger.LogLevel.DEBUG);
+
+    }
+
     /**
      * Starts the authentication server
      */
