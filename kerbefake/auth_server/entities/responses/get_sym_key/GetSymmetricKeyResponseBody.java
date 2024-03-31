@@ -42,7 +42,7 @@ public class GetSymmetricKeyResponseBody extends ServerMessageBody {
         byte[] encKeyBytes = encKey.toLEByteArray();
         byte[] ticketBytes = ticket.toLEByteArray();
 
-        byte[] byteArr = new byte[clientId.length() + encKeyBytes.length + ticketBytes.length];
+        byte[] byteArr = new byte[clientId.length() / 2 + encKeyBytes.length + ticketBytes.length];
         int offset = 0;
         byte[] clientIdBytes = hexStringToByteArray(clientId);
         // If this was null, ticket.toLEByteArray would have failed, but we do the check regardless
