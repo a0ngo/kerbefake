@@ -28,18 +28,25 @@ public class Main {
 
         boolean singleOperationMode = getIsSingleOperationMode();
 
-        if (!singleOperationMode) {
-            multipleModeExecution();
-            return;
-        }
+        try {
+            if (!singleOperationMode) {
+                multipleModeExecution();
+                return;
+            }
 
-        singleModeExecution();
+            singleModeExecution();
+        } catch (NoSuchElementException e) {
+            // We caught a CTRL + C, ignore and let threads terminate
+            commonLogger.info("CTRL+C Detected, exiting");
+            commonLogger.error(e);
+        }
     }
 
     private static void singleModeExecution() {
         commonLogger.info("Using single operation mode");
 
         commonLogger.print(menu);
+        System.out.print("> ");
         int modeSelection = userInputScanner.nextInt();
         switch (modeSelection) {
             case Constants.MODE_CLIENT:
@@ -109,9 +116,6 @@ public class Main {
                         return;
                 }
             } while (true);
-        } catch (NoSuchElementException e) {
-            // We caught a CTRL + C, ignore and let threads terminate
-            commonLogger.info("CTRL+C Detected, exiting");
         } finally {
             if (authServerThread != null)
                 authServerThread.interrupt();
