@@ -34,7 +34,7 @@ public final class Constants {
     /**
      * The response header size.
      */
-    public static final int RESPONSE_HEADER_SIZE = 9;
+    public static final int RESPONSE_HEADER_SIZE = 7;
     public static final String CLIENTS_FILE_NAME = "./clients";
     public static final String CLIENT_CONFIG_FILE_NAME = "./me.info";
     public static final String SERVER_CONFIG_FILE_NAME = "./msg.info";
