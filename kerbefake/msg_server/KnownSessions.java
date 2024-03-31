@@ -26,11 +26,6 @@ public final class KnownSessions {
     }
 
     public synchronized boolean addSession(String clientId, Ticket ticket) {
-        if (this.userIdToKeyMapping.containsKey(clientId)) {
-            msgLogger.error("Client ID already exists in session mapping, ignoring.");
-            return false;
-        }
-
         this.userIdToKeyMapping.put(clientId, ticket);
         return true;
     }
