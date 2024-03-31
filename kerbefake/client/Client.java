@@ -1,6 +1,5 @@
 package kerbefake.client;
 
-import kerbefake.client.NetworkManager.ServerType;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponse;
 import kerbefake.auth_server.entities.responses.get_sym_key.GetSymmetricKeyResponseBody;
 import kerbefake.client.errors.InvalidClientConfigException;
@@ -30,7 +29,6 @@ public class Client implements Runnable {
     private NetworkManager networkManager;
     private SessionManager sessionManager;
     private ClientState clientState;
-    private final int defaultTimeTillClose = 300;
 
     public static final Logger clientLogger = Logger.getLogger(LoggerType.CLIENT_LOGGER);
 
@@ -43,7 +41,7 @@ public class Client implements Runnable {
             clientLogger.updateMinimalLogLevel(Logger.LogLevel.DEBUG, Logger.LogLevel.DEBUG);
         try {
             clientConfig = ClientConfig.load();
-            clientState = BEFORE_REGISTER;
+            clientState = AFTER_REGISTER;
         } catch (InvalidClientConfigException e) {
             if (e.getMessage() != null && !e.getMessage().equals(new InvalidClientConfigException().getMessage())) {
                 clientLogger.error(e);
@@ -58,10 +56,6 @@ public class Client implements Runnable {
         }
         networkManager = NetworkManager.getInstance();
         sessionManager = SessionManager.getInstance();
-    }
-
-    public void openAuthConnection(String ip, int port) {
-        networkManager.openConnection(ServerType.AUTH, ip, port, defaultTimeTillClose);
     }
 
     private int getOperationToPerform() {
