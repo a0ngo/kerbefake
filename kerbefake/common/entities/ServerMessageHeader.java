@@ -21,12 +21,12 @@ public class ServerMessageHeader implements Message {
 
     private byte[] rawHeader;
 
-    private String clientID;
+    private final String clientID;
 
-    private byte version;
-    private MessageCode code;
+    private final byte version;
+    private final MessageCode code;
 
-    private int payloadSize;
+    private final int payloadSize;
 
     public ServerMessageHeader(byte version, MessageCode code, int payloadSize) {
         this(null, version, code, payloadSize);
@@ -110,7 +110,7 @@ public class ServerMessageHeader implements Message {
 
     @Override
     public byte[] toLEByteArray() throws InvalidMessageException {
-        // The raw header is received in little endian so we can return it.
+        // The raw header is received in little endian, so we can return it.
         if (this.rawHeader != null) {
             return this.rawHeader;
         }
@@ -124,7 +124,7 @@ public class ServerMessageHeader implements Message {
 
         if (this.clientID != null) {
             byte[] idByteArr = hexStringToByteArray(this.clientID);
-            if(idByteArr == null){
+            if (idByteArr == null) {
                 throw new InvalidMessageException("Client ID is not a hex string.");
             }
             System.arraycopy(idByteArr, 0, byteArr, offsetCounter, idByteArr.length);
