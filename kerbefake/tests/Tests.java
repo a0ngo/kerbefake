@@ -46,7 +46,7 @@ final class Tests {
     public static final String EXPECTED_TEST_FAILURE_STRING = "TEST - ❌ Failed";
 
     public static String CLIENT_ID = null;
-    
+
     public static final Logger testLogger = getLogger(LoggerType.TEST_LOGGER, Logger.LogLevel.DEBUG, Logger.LogLevel.DEBUG);
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
@@ -87,6 +87,7 @@ final class Tests {
             String clientId;
             if (CLIENT_ID == null) {
                 clientId = registerClient(result.authServerStream);
+                CLIENT_ID = clientId;
             } else {
                 testLogger.info("TEST - No need to register, client ID is provided.");
                 clientId = CLIENT_ID;
