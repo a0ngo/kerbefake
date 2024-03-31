@@ -109,17 +109,22 @@ public final class UserInputOutputHandler {
     public static Object prompt(String message, Class<?> valueType) {
         System.out.println(message);
         System.out.print("> ");
-        if (valueType.equals(Integer.class)) {
-            return inputHandler.nextInt();
-        } else if (valueType.equals(Boolean.class)) {
-            String response = inputHandler.next(Pattern.compile("([YynN]|(Yes|YES|yes|No|NO|no))"));
-            if (response.equals("Y") || response.equals("y") || response.equals("Yes") || response.equals("YES") || response.equals("yes"))
-                return true;
-            return false;
-        } else {
-            if (!valueType.equals(String.class))
-                clientLogger.error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
-            return inputHandler.next();
+        try {
+            if (valueType.equals(Integer.class)) {
+                return inputHandler.nextInt();
+            } else if (valueType.equals(Boolean.class)) {
+                String response = inputHandler.next(Pattern.compile("([YynN]|(Yes|YES|yes|No|NO|no))"));
+                if (response.equals("Y") || response.equals("y") || response.equals("Yes") || response.equals("YES") || response.equals("yes"))
+                    return true;
+                return false;
+            } else {
+                if (!valueType.equals(String.class))
+                    clientLogger.error("Unknown expected input type %s, defaulting to string", valueType.getCanonicalName());
+                return inputHandler.next();
+            }
+        } finally {
+            // Read the remaining content of the input to make sure we don't error out
+            inputHandler.nextLine();
         }
     }
 
@@ -134,7 +139,7 @@ public final class UserInputOutputHandler {
     }
 
     public static String getNameFromUser() {
-        return promptString("Please provide your name;", true);
+        return promptLongString("Please provide your name;");
     }
 
 
